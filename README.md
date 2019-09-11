@@ -1,6 +1,6 @@
-## OpenSeaCreatures ERC721 contracts
+## OpenSea Creatures ERC-1155 contracts
 
-### About OpenSeaCreatures.
+### About OpenSea Creatures.
 
 This is a  simple sample ERC-1155 contract for the purposes of demonstrating integration with the [OpenSea](https://opensea.io) marketplace. We include a script for minting the items.
 
