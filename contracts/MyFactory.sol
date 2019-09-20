@@ -1,12 +1,12 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.11;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "./Factory.sol";
-import "./Creature.sol";
-import "./CreatureLootBox.sol";
+import "./IFactory.sol";
+import "./MyCollectible.sol";
+import "./MyCollectibleLootBox.sol";
 import "./Strings.sol";
 
-contract CreatureFactory is Factory, Ownable {
+contract MyFactory is IFactory, Ownable {
   using Strings for string;
 
   address public proxyRegistryAddress;
@@ -20,7 +20,7 @@ contract CreatureFactory is Factory, Ownable {
   uint256 CREATURE_SUPPLY = 100;
 
   /**
-   * Three different options for minting Creatures (basic, premium, and gold).
+   * Three different options for minting MyCollectibles (basic, premium, and gold).
    */
   uint256 NUM_OPTIONS = 3;
   uint256 SINGLE_CREATURE_OPTION = 0;
@@ -31,11 +31,11 @@ contract CreatureFactory is Factory, Ownable {
   constructor(address _proxyRegistryAddress, address _nftAddress) public {
     proxyRegistryAddress = _proxyRegistryAddress;
     nftAddress = _nftAddress;
-    lootBoxNftAddress = address(new CreatureLootBox(_proxyRegistryAddress, address(this)));
+    lootBoxNftAddress = address(new MyCollectibleLootBox(_proxyRegistryAddress, address(this)));
   }
 
   function name() external view returns (string memory) {
-    return "OpenSeaCreature Item Sale";
+    return "OpenSeaMyCollectible Item Sale";
   }
 
   function symbol() external view returns (string memory) {
@@ -56,16 +56,16 @@ contract CreatureFactory is Factory, Ownable {
     assert(address(proxyRegistry.proxies(owner())) == msg.sender || owner() == msg.sender || msg.sender == lootBoxNftAddress);
     require(canMint(_optionId));
 
-    Creature openSeaCreature = Creature(nftAddress);
+    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
     if (_optionId == SINGLE_CREATURE_OPTION) {
-      openSeaCreature.mintTo(_toAddress);
+      openSeaMyCollectible.mintTo(_toAddress);
     } else if (_optionId == MULTIPLE_CREATURE_OPTION) {
       for (uint256 i = 0; i < NUM_CREATURES_IN_MULTIPLE_CREATURE_OPTION; i++) {
-        openSeaCreature.mintTo(_toAddress);
+        openSeaMyCollectible.mintTo(_toAddress);
       }
     } else if (_optionId == LOOTBOX_OPTION) {
-      CreatureLootBox openSeaCreatureLootBox = CreatureLootBox(lootBoxNftAddress);
-      openSeaCreatureLootBox.mintTo(_toAddress);
+      MyCollectibleLootBox openSeaMyCollectibleLootBox = MyCollectibleLootBox(lootBoxNftAddress);
+      openSeaMyCollectibleLootBox.mintTo(_toAddress);
     } 
   }
 
@@ -74,8 +74,8 @@ contract CreatureFactory is Factory, Ownable {
       return false;
     }
 
-    Creature openSeaCreature = Creature(nftAddress);
-    uint256 creatureSupply = openSeaCreature.totalSupply();
+    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
+    uint256 creatureSupply = openSeaMyCollectible.totalSupply();
 
     uint256 numItemsAllocated = 0;
     if (_optionId == SINGLE_CREATURE_OPTION) {
@@ -83,8 +83,8 @@ contract CreatureFactory is Factory, Ownable {
     } else if (_optionId == MULTIPLE_CREATURE_OPTION) {
       numItemsAllocated = NUM_CREATURES_IN_MULTIPLE_CREATURE_OPTION;
     } else if (_optionId == LOOTBOX_OPTION) {
-      CreatureLootBox openSeaCreatureLootBox = CreatureLootBox(lootBoxNftAddress);
-      numItemsAllocated = openSeaCreatureLootBox.itemsPerLootbox();
+      MyCollectibleLootBox openSeaMyCollectibleLootBox = MyCollectibleLootBox(lootBoxNftAddress);
+      numItemsAllocated = openSeaMyCollectibleLootBox.itemsPerLootbox();
     }
     return creatureSupply < (CREATURE_SUPPLY - numItemsAllocated);
   }

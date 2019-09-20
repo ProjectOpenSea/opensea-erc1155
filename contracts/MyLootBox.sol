@@ -1,22 +1,23 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.11;
 
-import "./TradeableERC721Token.sol";
-import "./Creature.sol";
-import "./Factory.sol";
+import "./TradableERC1155Token.sol";
+import "./MyCollectible.sol";
+import "./MyFactory.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
- * @title CreatureLootBox
+ * @title MyLootBox
  *
- * CreatureLootBox - a tradeable loot box of Creatures.
+ * MyLootBox - a tradeable loot box of Creatures.
  */
-contract CreatureLootBox is TradeableERC721Token {
+contract MyLootBox is TradableERC1155Token {
     uint256 NUM_CREATURES_PER_BOX = 3;
     uint256 OPTION_ID = 0;
     address factoryAddress;
 
-    constructor(address _proxyRegistryAddress, address _factoryAddress) TradeableERC721Token("CreatureLootBox", "LOOTBOX", _proxyRegistryAddress) public {
+    constructor(address _proxyRegistryAddress, address _factoryAddress) TradeableERC721Token("MyLootBox", "LOOTBOX", _proxyRegistryAddress) public {
         factoryAddress = _factoryAddress;
+        _setBaseMetadataURI("https://opensea-creatures-api.herokuapp.com/api/box/");
     }
 
     function unpack(uint256 _tokenId) public {
@@ -31,10 +32,6 @@ contract CreatureLootBox is TradeableERC721Token {
 
         // Burn the presale item.
         _burn(msg.sender, _tokenId);
-    }
-
-    function baseTokenURI() public view returns (string memory) {
-        return "https://opensea-creatures-api.herokuapp.com/api/box/";
     }
 
     function itemsPerLootbox() public view returns (uint256) {
