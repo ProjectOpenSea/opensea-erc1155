@@ -15,11 +15,10 @@ contract ProxyRegistry {
  */
 contract TradableERC1155Token is ERC1155Metadata, ERC1155MintBurn {
   address proxyRegistryAddress;
-  uint256 private _currentTokenId = 0;
-
+  uint256 private _currentTokenID = 0;
+  mapping (uint256 => address) public creators;
   // Contract name
   string private _name;
-
   // Contract symbol
   string private _symbol;
 
@@ -45,29 +44,60 @@ contract TradableERC1155Token is ERC1155Metadata, ERC1155MintBurn {
     return _symbol;
   }
 
+  modifier creatorOnly(uint256 _id) {
+    require(creators[_id] == msg.sender);
+    _;
+  }
+
   /**
-    * @dev Mints a token to an address with a tokenURI.
+    * @dev Creates a new token type and assigns _initialSupply to an address
+    * @param _initialOwner address of the first owner of the token
+    * @param _initialSupply amount to supply the first owner
+    * @param _url Optional URI for this token type
+    */
+  function create(
+    address _initialOwner,
+    uint256 _initialSupply,
+    string calldata _uri
+  ) external returns(uint256 _id) {
+
+    uint256 _id = _getNextTokenID();
+    _incrementTokenTypeId();
+    creators[_id] = msg.sender;
+    _mint(_initialOwner, _id, _initialSupply, "");
+
+    if (bytes(_uri).length > 0) {
+      emit URI(_uri, _id);
+    }
+  }
+
+  /**
+    * @dev Mints some amount of tokens to an address
+    * @param _id Token ID to mint copies of
     * @param _to address of the future owner of the token
     */
-  function mintTo(address _to) public onlyOwner {
-    uint256 newTokenId = _getNextTokenId();
-    _mint(_to, newTokenId);
-    _incrementTokenId();
+  function mint(
+    uint256 _id,
+    address _to,
+    uint256 _quantity,
+    bytes memory _data
+  ) public onlyCreator(_id) {
+    _mint(_to, _id, _quantity, _data);
   }
 
   /**
-    * @dev calculates the next token ID based on value of _currentTokenId
+    * @dev calculates the next token ID based on value of _currentTokenID
     * @return uint256 for the next token ID
     */
-  function _getNextTokenId() private view returns (uint256) {
-    return _currentTokenId.add(1);
+  function _getNextTokenID() private view returns (uint256) {
+    return _currentTokenID.add(1);
   }
 
   /**
-    * @dev increments the value of _currentTokenId
+    * @dev increments the value of _currentTokenID
     */
-  function _incrementTokenId() private  {
-    _currentTokenId++;
+  function _incrementTokenTypeId() private  {
+    _currentTokenID++;
   }
 
   /**
