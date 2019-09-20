@@ -1,5 +1,6 @@
 pragma solidity ^0.5.11;
 
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155Metadata.sol';
 import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155MintBurn.sol';
 
@@ -10,10 +11,10 @@ contract ProxyRegistry {
 }
 
 /**
- * @title TradableERC1155Token
- * TradableERC1155Token - ERC1155 contract that whitelists a trading address, adds tokenURI as a method, and has minting functionality.
+ * @title ERC1155Tradable
+ * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and implements name() and symbol()
  */
-contract TradableERC1155Token is ERC1155Metadata, ERC1155MintBurn {
+contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   address proxyRegistryAddress;
   uint256 private _currentTokenID = 0;
   mapping (uint256 => address) public creators;
@@ -23,9 +24,9 @@ contract TradableERC1155Token is ERC1155Metadata, ERC1155MintBurn {
   string private _symbol;
 
   constructor(string memory _name, string memory _symbol, address _proxyRegistryAddress) public {
-    proxyRegistryAddress = _proxyRegistryAddress;
     name = _name;
     symbol = _symbol;
+    proxyRegistryAddress = _proxyRegistryAddress;
   }
 
   /**
@@ -45,7 +46,7 @@ contract TradableERC1155Token is ERC1155Metadata, ERC1155MintBurn {
   }
 
   modifier creatorOnly(uint256 _id) {
-    require(creators[_id] == msg.sender);
+    require(creators[_id] == msg.sender, "ERC1155Tradable#creatorOnly: ONLY_CREATOR_ALLOWED");
     _;
   }
 
@@ -58,7 +59,7 @@ contract TradableERC1155Token is ERC1155Metadata, ERC1155MintBurn {
   function create(
     address _initialOwner,
     uint256 _initialSupply,
-    string calldata _uri
+    string memory _uri
   ) external returns(uint256 _id) {
 
     uint256 _id = _getNextTokenID();
@@ -73,16 +74,38 @@ contract TradableERC1155Token is ERC1155Metadata, ERC1155MintBurn {
 
   /**
     * @dev Mints some amount of tokens to an address
-    * @param _id Token ID to mint copies of
-    * @param _to address of the future owner of the token
+    * @param _to          Address of the future owner of the token
+    * @param _id          Token ID to mint
+    * @param _quantity    Amount of tokens to mint
+    * @param _data        Data to pass if receiver is contract
     */
   function mint(
-    uint256 _id,
     address _to,
+    uint256 _id,
     uint256 _quantity,
     bytes memory _data
   ) public onlyCreator(_id) {
     _mint(_to, _id, _quantity, _data);
+  }
+
+  /**
+    * @dev Mint tokens for each id in _ids
+    * @param _to          The address to mint tokens to
+    * @param _ids         Array of ids to mint
+    * @param _quantities  Array of amounts of tokens to mint per id
+    * @param _data        Data to pass if receiver is contract
+    */
+  function batchMint(
+    address _to,
+    uint256[] memory _ids,
+    uint256[] memory _quantities,
+    bytes memory _data
+  ) public {
+    for (uint256 i = 0; i < _ids.length; i++) {
+      address _id = _ids[i];
+      require(creators[_id] == msg.sender, "ERC1155Tradable#batchMint: ONLY_CREATOR_ALLOWED");
+    }
+    _batchMint(_to, _ids, _quantities, _data);
   }
 
   /**

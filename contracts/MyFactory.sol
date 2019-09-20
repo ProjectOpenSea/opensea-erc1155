@@ -3,7 +3,7 @@ pragma solidity ^0.5.11;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./IFactory.sol";
 import "./MyCollectible.sol";
-import "./MyCollectibleLootBox.sol";
+import "./MyLootBox.sol";
 import "./Strings.sol";
 
 contract MyFactory is IFactory, Ownable {
@@ -49,7 +49,7 @@ contract MyFactory is IFactory, Ownable {
   function numOptions() public view returns (uint256) {
     return NUM_OPTIONS;
   }
-  
+
   function mint(uint256 _optionId, address _toAddress) public {
     // Must be sent from the owner proxy or owner.
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
@@ -66,7 +66,7 @@ contract MyFactory is IFactory, Ownable {
     } else if (_optionId == LOOTBOX_OPTION) {
       MyCollectibleLootBox openSeaMyCollectibleLootBox = MyCollectibleLootBox(lootBoxNftAddress);
       openSeaMyCollectibleLootBox.mintTo(_toAddress);
-    } 
+    }
   }
 
   function canMint(uint256 _optionId) public view returns (bool) {
@@ -88,7 +88,7 @@ contract MyFactory is IFactory, Ownable {
     }
     return creatureSupply < (CREATURE_SUPPLY - numItemsAllocated);
   }
-  
+
   function tokenURI(uint256 _optionId) external view returns (string memory) {
     return Strings.strConcat(
         baseURI,

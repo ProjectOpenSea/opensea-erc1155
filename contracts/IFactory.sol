@@ -2,7 +2,7 @@ pragma solidity ^0.5.11;
 
 /**
  * This is a generic factory contract that can be used to mint tokens. The configuration
- * for minting is specified by an _optionId, which can be used to delineate various 
+ * for minting is specified by an _optionId, which can be used to delineate various
  * ways of minting.
  */
 interface IFactory {

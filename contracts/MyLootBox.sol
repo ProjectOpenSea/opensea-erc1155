@@ -1,6 +1,6 @@
 pragma solidity ^0.5.11;
 
-import "./TradableERC1155Token.sol";
+import "./ERC1155Tradable.sol";
 import "./MyCollectible.sol";
 import "./MyFactory.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
@@ -10,7 +10,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
  *
  * MyLootBox - a tradeable loot box of Creatures.
  */
-contract MyLootBox is TradableERC1155Token {
+contract MyLootBox is ERC1155Tradable {
     uint256 NUM_CREATURES_PER_BOX = 3;
     uint256 OPTION_ID = 0;
     address factoryAddress;
