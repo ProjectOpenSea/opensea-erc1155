@@ -3,6 +3,7 @@ pragma solidity ^0.5.11;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155Metadata.sol';
 import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155MintBurn.sol';
+import "./Strings.sol";
 
 contract OwnableDelegateProxy { }
 
@@ -15,6 +16,8 @@ contract ProxyRegistry {
  * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and implements name() and symbol()
  */
 contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
+  using Strings for string;
+
   address proxyRegistryAddress;
   uint256 private _currentTokenID = 0;
   mapping (uint256 => address) public creators;
@@ -22,6 +25,11 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   string private _name;
   // Contract symbol
   string private _symbol;
+
+  modifier creatorOnly(uint256 _id) {
+    require(creators[_id] == msg.sender, "ERC1155Tradable#creatorOnly: ONLY_CREATOR_ALLOWED");
+    _;
+  }
 
   constructor(string memory _name, string memory _symbol, address _proxyRegistryAddress) public {
     name = _name;
@@ -45,9 +53,11 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     return _symbol;
   }
 
-  modifier creatorOnly(uint256 _id) {
-    require(creators[_id] == msg.sender, "ERC1155Tradable#creatorOnly: ONLY_CREATOR_ALLOWED");
-    _;
+  function uri(uint256 _id) public view returns (string memory) {
+    return Strings.strConcat(
+      baseMetadataURI,
+      Strings.uint2str(_id)
+    );
   }
 
   /**
@@ -55,21 +65,24 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     * @param _initialOwner address of the first owner of the token
     * @param _initialSupply amount to supply the first owner
     * @param _url Optional URI for this token type
+    * @param _data Data to pass if receiver is contract
     */
   function create(
     address _initialOwner,
     uint256 _initialSupply,
-    string memory _uri
+    string memory _uri,
+    bytes memory _data
   ) external returns(uint256 _id) {
 
     uint256 _id = _getNextTokenID();
     _incrementTokenTypeId();
     creators[_id] = msg.sender;
-    _mint(_initialOwner, _id, _initialSupply, "");
 
     if (bytes(_uri).length > 0) {
       emit URI(_uri, _id);
     }
+
+    _mint(_initialOwner, _id, _initialSupply, _data);
   }
 
   /**
@@ -107,6 +120,10 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     }
     _batchMint(_to, _ids, _quantities, _data);
   }
+
+  /**
+   */
+  
 
   /**
     * @dev calculates the next token ID based on value of _currentTokenID

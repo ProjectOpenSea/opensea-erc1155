@@ -12,34 +12,34 @@ contract MyFactory is IFactory, Ownable {
   address public proxyRegistryAddress;
   address public nftAddress;
   address public lootBoxNftAddress;
-  string public baseURI = "https://opensea-creatures-api.herokuapp.com/api/factory/";
+  string internal baseMetadataURI = "https://opensea-creatures-api.herokuapp.com/api/factory/";
 
   /**
-   * Enforce the existence of only 100 OpenSea creatures.
+   * Enforce the existence of only 100 items.
    */
-  uint256 CREATURE_SUPPLY = 100;
+  uint256 TOTAL_SUPPLY = 100;
 
   /**
    * Three different options for minting MyCollectibles (basic, premium, and gold).
    */
   uint256 NUM_OPTIONS = 3;
-  uint256 SINGLE_CREATURE_OPTION = 0;
-  uint256 MULTIPLE_CREATURE_OPTION = 1;
+  uint256 SINGLE_ITEM_OPTION = 0;
+  uint256 MULTIPLE_ITEM_OPTION = 1;
   uint256 LOOTBOX_OPTION = 2;
-  uint256 NUM_CREATURES_IN_MULTIPLE_CREATURE_OPTION = 4;
+  uint256 NUM_ITEMS_IN_MULTIPLE_ITEM_OPTION = 4;
 
   constructor(address _proxyRegistryAddress, address _nftAddress) public {
     proxyRegistryAddress = _proxyRegistryAddress;
     nftAddress = _nftAddress;
-    lootBoxNftAddress = address(new MyCollectibleLootBox(_proxyRegistryAddress, address(this)));
+    lootBoxNftAddress = address(new MyLootBox(_proxyRegistryAddress, address(this)));
   }
 
   function name() external view returns (string memory) {
-    return "OpenSeaMyCollectible Item Sale";
+    return "My Collectible Pre-Sale";
   }
 
   function symbol() external view returns (string memory) {
-    return "CPF";
+    return "MCP";
   }
 
   function supportsFactoryInterface() public view returns (bool) {
@@ -50,26 +50,31 @@ contract MyFactory is IFactory, Ownable {
     return NUM_OPTIONS;
   }
 
-  function mint(uint256 _optionId, address _toAddress) public {
+  function mint(
+    uint256 _optionId,
+    address _toAddress,
+    uint256 _amount,
+    bytes memory _data
+  ) public {
     // Must be sent from the owner proxy or owner.
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
     assert(address(proxyRegistry.proxies(owner())) == msg.sender || owner() == msg.sender || msg.sender == lootBoxNftAddress);
-    require(canMint(_optionId));
+    require(canMint(_optionId, _amount), "MyFactory#mint: CANNOT_MINT");
 
     MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
-    if (_optionId == SINGLE_CREATURE_OPTION) {
-      openSeaMyCollectible.mintTo(_toAddress);
-    } else if (_optionId == MULTIPLE_CREATURE_OPTION) {
-      for (uint256 i = 0; i < NUM_CREATURES_IN_MULTIPLE_CREATURE_OPTION; i++) {
-        openSeaMyCollectible.mintTo(_toAddress);
+    if (_optionId == SINGLE_ITEM_OPTION) {
+      openSeaMyCollectible.create(_toAddress, _amount, _data);
+    } else if (_optionId == MULTIPLE_ITEM_OPTION) {
+      for (uint256 i = 0; i < NUM_ITEMS_IN_MULTIPLE_ITEM_OPTION; i++) {
+        openSeaMyCollectible.create(_toAddress, _amount, _data);
       }
     } else if (_optionId == LOOTBOX_OPTION) {
-      MyCollectibleLootBox openSeaMyCollectibleLootBox = MyCollectibleLootBox(lootBoxNftAddress);
-      openSeaMyCollectibleLootBox.mintTo(_toAddress);
+      MyLootBox openSeaMyLootBox = MyLootBox(lootBoxNftAddress);
+      openSeaMyLootBox.create(_toAddress, _amount, _data);
     }
   }
 
-  function canMint(uint256 _optionId) public view returns (bool) {
+  function canMint(uint256 _optionId, uint256 _amount) public view returns (bool) {
     if (_optionId >= NUM_OPTIONS) {
       return false;
     }
@@ -78,30 +83,36 @@ contract MyFactory is IFactory, Ownable {
     uint256 creatureSupply = openSeaMyCollectible.totalSupply();
 
     uint256 numItemsAllocated = 0;
-    if (_optionId == SINGLE_CREATURE_OPTION) {
+    if (_optionId == SINGLE_ITEM_OPTION) {
       numItemsAllocated = 1;
-    } else if (_optionId == MULTIPLE_CREATURE_OPTION) {
-      numItemsAllocated = NUM_CREATURES_IN_MULTIPLE_CREATURE_OPTION;
+    } else if (_optionId == MULTIPLE_ITEM_OPTION) {
+      numItemsAllocated = NUM_ITEMS_IN_MULTIPLE_ITEM_OPTION;
     } else if (_optionId == LOOTBOX_OPTION) {
-      MyCollectibleLootBox openSeaMyCollectibleLootBox = MyCollectibleLootBox(lootBoxNftAddress);
-      numItemsAllocated = openSeaMyCollectibleLootBox.itemsPerLootbox();
+      MyLootBox openSeaMyLootBox = MyLootBox(lootBoxNftAddress);
+      numItemsAllocated = openSeaMyLootBox.itemsPerLootbox();
     }
-    return creatureSupply < (CREATURE_SUPPLY - numItemsAllocated);
+    return creatureSupply < TOTAL_SUPPLY.sub(numItemsAllocated.mul(_amount));
   }
 
-  function tokenURI(uint256 _optionId) external view returns (string memory) {
+  function uri(uint256 _optionId) public view returns (string memory) {
     return Strings.strConcat(
-        baseURI,
-        Strings.uint2str(_optionId)
+      baseMetadataURI,
+      Strings.uint2str(_optionId)
     );
   }
 
   /**
    * Hack to get things to work automatically on OpenSea.
-   * Use transferFrom so the frontend doesn't have to worry about different method names.
+   * Use safeTransferFrom so the frontend doesn't have to worry about different method names.
    */
-  function transferFrom(address _from, address _to, uint256 _tokenId) public {
-    mint(_tokenId, _to);
+  function safeTransferFrom(
+    address _from,
+    address _to,
+    uint256 _tokenID,
+    uint256 _amount,
+    bytes memory _data
+  ) public {
+    mint(_tokenId, _to, _amount, _data);
   }
 
   /**
@@ -130,9 +141,12 @@ contract MyFactory is IFactory, Ownable {
 
   /**
    * Hack to get things to work automatically on OpenSea.
-   * Use isApprovedForAll so the frontend doesn't have to worry about different method names.
    */
-  function ownerOf(uint256 _tokenId) public view returns (address _owner) {
-    return owner();
+  function balanceOf(address _owner, uint256 _id) public view returns (uint256 _amount) {
+    if (owner == owner()) {
+      return TOTAL_SUPPLY;
+    } else {
+      return 0;
+    }
   }
 }
