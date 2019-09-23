@@ -1,8 +1,8 @@
-## OpenSea Creatures ERC-1155 contracts
+## OpenSea ERC-1155 Starter Contracts
 
-### About OpenSea Creatures.
+### About ERC-1155.
 
-This is a  simple sample ERC-1155 contract for the purposes of demonstrating integration with the [OpenSea](https://opensea.io) marketplace. We include a script for minting the items.
+This is a  simple sample ERC-1155 contract for the purposes of demonstrating integration with the [OpenSea](https://opensea.io) marketplace for crypto collectibles. We include a script for minting items.
 
 Additionally, this contract whitelists the proxy accounts of OpenSea users so that they are automatically able to trade the ERC-1155 items on OpenSea (without having to pay gas for an additional approval). On OpenSea, each user has a "proxy" account that they control, and is ultimately called by the exchange contracts to trade their items. (Note that this addition does not mean that OpenSea itself has access to the items, simply that the users can list them more easily if they wish to do so)
 

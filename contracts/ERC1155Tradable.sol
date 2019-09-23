@@ -13,7 +13,7 @@ contract ProxyRegistry {
 
 /**
  * @title ERC1155Tradable
- * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and implements name() and symbol()
+ * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and supports standards like _exists(), name() and symbol() from OpenZeppelin
  */
 contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   using Strings for string;
@@ -26,8 +26,19 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   // Contract symbol
   string private _symbol;
 
+  /**
+   * @dev Require msg.sender to be the creator of the token id
+   */
   modifier creatorOnly(uint256 _id) {
     require(creators[_id] == msg.sender, "ERC1155Tradable#creatorOnly: ONLY_CREATOR_ALLOWED");
+    _;
+  }
+
+  /**
+   * @dev Require msg.sender to own more than 0 of the token id
+   */
+  modifier ownersOnly(uint256 _id) {
+    require(balances[msg.sender][_id] > 0, "ERC1155Tradable#ownersOnly: ONLY_OWNERS_ALLOWED");
     _;
   }
 
@@ -54,6 +65,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   }
 
   function uri(uint256 _id) public view returns (string memory) {
+    require(_exists(_id), "ERC721Tradable#uri: NONEXISTENT_TOKEN");
     return Strings.strConcat(
       baseMetadataURI,
       Strings.uint2str(_id)
@@ -72,7 +84,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     uint256 _initialSupply,
     string memory _uri,
     bytes memory _data
-  ) external returns(uint256 _id) {
+  ) external returns (uint256) {
 
     uint256 _id = _getNextTokenID();
     _incrementTokenTypeId();
@@ -83,6 +95,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     }
 
     _mint(_initialOwner, _id, _initialSupply, _data);
+    return _id;
   }
 
   /**
@@ -122,8 +135,13 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   }
 
   /**
-   */
-  
+    * @dev Returns whether the specified token exists by checking to see if it has a creator
+    * @param _id uint256 ID of the token to query the existence of
+    * @return bool whether the token exists
+    */
+  function _exists(uint256 _id) internal view returns (bool) {
+    return creators[_id] != address(0);
+  }
 
   /**
     * @dev calculates the next token ID based on value of _currentTokenID
@@ -149,7 +167,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   )
     external
     view
-    returns (bool isOperator)
+    returns (bool)
   {
     // Whitelist OpenSea proxy contract for easy trading.
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
