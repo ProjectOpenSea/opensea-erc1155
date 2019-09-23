@@ -13,7 +13,8 @@ contract ProxyRegistry {
 
 /**
  * @title ERC1155Tradable
- * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and supports standards like _exists(), name() and symbol() from OpenZeppelin
+ * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and supports useful standards from OpenZeppelin,
+  like _exists(), name(), symbol(), and totalSupply()
  */
 contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   using Strings for string;
@@ -21,6 +22,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   address proxyRegistryAddress;
   uint256 private _currentTokenID = 0;
   mapping (uint256 => address) public creators;
+  mapping (uint256 => uint256) public tokenSupply;
   // Contract name
   string private _name;
   // Contract symbol
@@ -75,6 +77,17 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   }
 
   /**
+    * @dev Returns the total quantity for a token ID
+    * @param _id uint256 ID of the token to query
+    * @return amount of token in existence
+    */
+  function totalSupply(
+    uint256 _id
+  ) public view returns (uint256) {
+    return tokenSupply[_id];
+  }
+
+  /**
    * @dev Will update the base URL of token's URI
    * @param _newBaseMetadataURI New base URL of token's URI
    */
@@ -108,6 +121,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     }
 
     _mint(_initialOwner, _id, _initialSupply, _data);
+    tokenSupply[_id] = initialSupply;
     return _id;
   }
 
@@ -125,6 +139,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     bytes memory _data
   ) public onlyCreator(_id) {
     _mint(_to, _id, _quantity, _data);
+    tokenSupply[_id] += quantity;
   }
 
   /**
@@ -141,8 +156,10 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     bytes memory _data
   ) public {
     for (uint256 i = 0; i < _ids.length; i++) {
-      address _id = _ids[i];
+      uint256 _id = _ids[i];
       require(creators[_id] == msg.sender, "ERC1155Tradable#batchMint: ONLY_CREATOR_ALLOWED");
+      uint256 quantity = _quantities[i];
+      tokenSupply[_id] += quantity;
     }
     _batchMint(_to, _ids, _quantities, _data);
   }

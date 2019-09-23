@@ -3,15 +3,14 @@ pragma solidity ^0.5.11;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./IFactory.sol";
 import "./MyCollectible.sol";
-import "./MyLootBox.sol";
 import "./Strings.sol";
 
+// WIP
 contract MyFactory is IFactory, Ownable {
   using Strings for string;
 
   address public proxyRegistryAddress;
   address public nftAddress;
-  address public lootBoxNftAddress;
   string internal baseMetadataURI = "https://opensea-creatures-api.herokuapp.com/api/factory/";
 
   /**
@@ -22,16 +21,14 @@ contract MyFactory is IFactory, Ownable {
   /**
    * Three different options for minting MyCollectibles (basic, premium, and gold).
    */
-  uint256 NUM_OPTIONS = 3;
+  uint256 NUM_OPTIONS = 2;
   uint256 SINGLE_ITEM_OPTION = 0;
   uint256 MULTIPLE_ITEM_OPTION = 1;
-  uint256 LOOTBOX_OPTION = 2;
   uint256 NUM_ITEMS_IN_MULTIPLE_ITEM_OPTION = 4;
 
   constructor(address _proxyRegistryAddress, address _nftAddress) public {
     proxyRegistryAddress = _proxyRegistryAddress;
     nftAddress = _nftAddress;
-    lootBoxNftAddress = address(new MyLootBox(_proxyRegistryAddress, address(this)));
   }
 
   function name() external view returns (string memory) {
@@ -58,7 +55,11 @@ contract MyFactory is IFactory, Ownable {
   ) public {
     // Must be sent from the owner proxy or owner.
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
-    require(address(proxyRegistry.proxies(owner())) == msg.sender || owner() == msg.sender || msg.sender == lootBoxNftAddress, "MyFactory#mint: NOT_AUTHORIZED_TO_MINT");
+    require(
+      address(proxyRegistry.proxies(owner())) == msg.sender ||
+      owner() == msg.sender,
+      "MyFactory#mint: NOT_AUTHORIZED_TO_MINT"
+    );
     require(canMint(_optionId, _amount), "MyFactory#mint: CANNOT_MINT_MORE");
 
     MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
@@ -68,9 +69,6 @@ contract MyFactory is IFactory, Ownable {
       for (uint256 i = 0; i < NUM_ITEMS_IN_MULTIPLE_ITEM_OPTION; i++) {
         openSeaMyCollectible.create(_toAddress, _amount, _data);
       }
-    } else if (_optionId == LOOTBOX_OPTION) {
-      MyLootBox openSeaMyLootBox = MyLootBox(lootBoxNftAddress);
-      openSeaMyLootBox.create(_toAddress, _amount, _data);
     }
   }
 
@@ -87,9 +85,6 @@ contract MyFactory is IFactory, Ownable {
       numItemsAllocated = 1;
     } else if (_optionId == MULTIPLE_ITEM_OPTION) {
       numItemsAllocated = NUM_ITEMS_IN_MULTIPLE_ITEM_OPTION;
-    } else if (_optionId == LOOTBOX_OPTION) {
-      MyLootBox openSeaMyLootBox = MyLootBox(lootBoxNftAddress);
-      numItemsAllocated = openSeaMyLootBox.itemsPerLootbox();
     }
     return creatureSupply < TOTAL_SUPPLY.sub(numItemsAllocated.mul(_amount));
   }
@@ -144,7 +139,7 @@ contract MyFactory is IFactory, Ownable {
    */
   function balanceOf(address _owner, uint256 _id) public view returns (uint256 _amount) {
     if (owner == owner()) {
-      return TOTAL_SUPPLY;
+      return TOTAL_SUPPLY - openSeaMyCollectible.totalSupply(_id);
     } else {
       return 0;
     }
