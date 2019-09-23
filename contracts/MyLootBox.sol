@@ -3,7 +3,6 @@ pragma solidity ^0.5.11;
 import "./ERC1155Tradable.sol";
 import "./MyCollectible.sol";
 import "./MyFactory.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
  * @title MyLootBox

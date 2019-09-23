@@ -64,7 +64,9 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     return _symbol;
   }
 
-  function uri(uint256 _id) public view returns (string memory) {
+  function uri(
+    uint256 _id
+  ) public view returns (string memory) {
     require(_exists(_id), "ERC721Tradable#uri: NONEXISTENT_TOKEN");
     return Strings.strConcat(
       baseMetadataURI,
@@ -73,11 +75,22 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   }
 
   /**
+   * @dev Will update the base URL of token's URI
+   * @param _newBaseMetadataURI New base URL of token's URI
+   */
+  function setBaseMetadataURI(
+    string memory _newBaseMetadataURI
+  ) public onlyOwner {
+    _setBaseMetadataURI(_newBaseMetadataURI);
+  }
+
+  /**
     * @dev Creates a new token type and assigns _initialSupply to an address
     * @param _initialOwner address of the first owner of the token
     * @param _initialSupply amount to supply the first owner
     * @param _url Optional URI for this token type
     * @param _data Data to pass if receiver is contract
+    * @return The newly created token ID
     */
   function create(
     address _initialOwner,
@@ -139,7 +152,9 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     * @param _id uint256 ID of the token to query the existence of
     * @return bool whether the token exists
     */
-  function _exists(uint256 _id) internal view returns (bool) {
+  function _exists(
+    uint256 _id
+  ) internal view returns (bool) {
     return creators[_id] != address(0);
   }
 

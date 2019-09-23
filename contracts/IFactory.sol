@@ -25,13 +25,13 @@ interface IFactory {
    * @dev Returns whether the option ID can be minted. Can return false if the developer wishes to
    * restrict a total supply per option ID (or overall).
    */
-  function canMint(uint256 _optionId) external view returns (bool);
+  function canMint(uint256 _optionId, uint256 _amount) external view returns (bool);
 
   /**
    * @dev Returns a URL specifying some metadata about the option. This metadata can be of the
-   * same structure as the ERC721 metadata.
+   * same structure as the ERC1155 metadata.
    */
-  function tokenURI(uint256 _optionId) external view returns (string memory);
+  function uri(uint256 _optionId) external view returns (string memory);
 
   /**
    * Indicates that this is a factory contract. Ideally would use EIP 165 supportsInterface()
@@ -44,6 +44,8 @@ interface IFactory {
     * Options should also be delineated 0 - (numOptions() - 1) for convenient indexing.
     * @param _optionId the option id
     * @param _toAddress address of the future owner of the asset(s)
+    * @param _amount amount of the option to mint
+    * @param _data Extra data to pass during safeTransferFrom
     */
-  function mint(uint256 _optionId, address _toAddress) external;
+  function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes _data) external;
 }

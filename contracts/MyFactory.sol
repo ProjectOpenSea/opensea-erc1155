@@ -58,8 +58,8 @@ contract MyFactory is IFactory, Ownable {
   ) public {
     // Must be sent from the owner proxy or owner.
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
-    assert(address(proxyRegistry.proxies(owner())) == msg.sender || owner() == msg.sender || msg.sender == lootBoxNftAddress);
-    require(canMint(_optionId, _amount), "MyFactory#mint: CANNOT_MINT");
+    require(address(proxyRegistry.proxies(owner())) == msg.sender || owner() == msg.sender || msg.sender == lootBoxNftAddress, "MyFactory#mint: NOT_AUTHORIZED_TO_MINT");
+    require(canMint(_optionId, _amount), "MyFactory#mint: CANNOT_MINT_MORE");
 
     MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
     if (_optionId == SINGLE_ITEM_OPTION) {
