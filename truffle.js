@@ -34,14 +34,14 @@ module.exports = {
         );
       },
       gas: 4000000,
-      gasPrice: 50000000000
-    },
-    mocha: {
-      reporter: 'eth-gas-reporter',
-      reporterOptions : {
-        currency: 'USD',
-        gasPrice: 2
-      }
+      gasPrice: 20000000000
+    }
+  },
+  mocha: {
+    reporter: 'eth-gas-reporter',
+    reporterOptions : {
+      currency: 'USD',
+      gasPrice: 2
     }
   },
   compilers: {

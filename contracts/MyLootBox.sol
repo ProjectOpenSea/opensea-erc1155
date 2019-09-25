@@ -1,4 +1,4 @@
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.11;
 
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
@@ -31,6 +31,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     uint16[] classProbabilities;
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
+  mapping (uint256 => uint256) public optionToAmountOpened;
 
   mapping (uint256 => uint256) public classToTokenID;
   uint256 nonce = 0;
@@ -58,17 +59,19 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
 
   /**
    * @notice Buy a particular lootbox option
-   * TODO add the ability to open multiple at a time
+   * @param _option The Option to open
+   * @param _quantity The quantity of lootboxes to open
    */
   function open(
-    Option _option
+    Option _option,
+    uint256 _quantity
   ) public payable nonReentrant {
 
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
-    uint256 price = settings.price;
+    uint256 price = settings.price * _quantity;
     require(msg.value == price, "MyLootBox#open: INVALID_PAYMENT");
-    require(canMint(_option), "MyLootBox#open: CANNOT_MINT");
+    require(canMint(_option, _quantity, settings), "MyLootBox#open: CANNOT_MINT");
 
     // Iterate for items per box
     for (uint256 i = 0; i < settings.quantityPerOpen; i++) {
@@ -76,18 +79,26 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
       _mintClass(class, msg.sender, 1);
     }
 
-    emit LootBoxPurchased(optionId, msg.sender, 1);
+    optionToAmountOpened[optionId] = optionToAmountOpened[optionId] + _quantity;
+
+    emit LootBoxPurchased(optionId, msg.sender, _quantity);
   }
 
   function canMint(
     Option _option,
-    uint256 _amount
+    uint256 _amount,
+    OptionSettings memory _settings
   ) public view returns (bool) {
-    return !paused();
+    uint256 amountOpened = optionToAmountOpened[uint256(_option)];
+    return (
+      !paused() &&
+      _amount > 0 &&
+      _amount + amountOpened <= settings.totalSupply
+    );
   }
 
   function withdraw() public onlyOwner {
-    owner().transfer(address(this).balance);
+    msg.sender.transfer(address(this).balance);
   }
 
   /////
@@ -112,7 +123,6 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
   function _pickRandomClass(
     uint16[numClasses] memory _classProbabilities
   ) public view returns (uint256) {
-    Class class = Class.Common;
     uint16 value = uint16(_random() % 100);
     // Start at top class (length - 1)
     // skip common (0), we default to it
@@ -124,7 +134,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
         value = value - probability;
       }
     }
-    return class;
+    return Class.Common;
   }
 
   /**

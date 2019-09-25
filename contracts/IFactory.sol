@@ -1,4 +1,4 @@
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.11;
 
 /**
  * This is a generic factory contract that can be used to mint tokens. The configuration
