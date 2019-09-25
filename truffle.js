@@ -42,11 +42,11 @@ module.exports = {
         currency: 'USD',
         gasPrice: 2
       }
-    },
-    compilers: {
-      solc: {
-        version: "^0.5.11"
-      }
-    },
+    }
+  },
+  compilers: {
+    solc: {
+      version: "0.5.11"
+    }
   }
 };

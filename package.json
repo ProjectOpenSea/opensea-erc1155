@@ -21,7 +21,7 @@
     "multi-token-standard": "0.8.2",
     "opensea-js": "latest",
     "openzeppelin-solidity": "^2.1.3",
-    "truffle": "^5.0.25",
+    "truffle": "5.0.37",
     "truffle-hdwallet-provider": "1.0.12",
     "web3": "1.0.0-beta.34"
   },

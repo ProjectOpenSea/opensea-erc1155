@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.8;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155Metadata.sol';
@@ -16,7 +16,7 @@ contract ProxyRegistry {
  * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and supports useful standards from OpenZeppelin,
   like _exists(), name(), symbol(), and totalSupply()
  */
-contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
+contract ERC1155Tradable is ERC1155MintBurn, ERC1155Metadata, Ownable {
   using Strings for string;
 
   address proxyRegistryAddress;
@@ -24,9 +24,9 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   mapping (uint256 => address) public creators;
   mapping (uint256 => uint256) public tokenSupply;
   // Contract name
-  string private _name;
+  string public name;
   // Contract symbol
-  string private _symbol;
+  string public symbol;
 
   /**
    * @dev Require msg.sender to be the creator of the token id
@@ -44,26 +44,14 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     _;
   }
 
-  constructor(string memory _name, string memory _symbol, address _proxyRegistryAddress) public {
+  constructor(
+    string memory _name,
+    string memory _symbol,
+    address _proxyRegistryAddress
+  ) public {
     name = _name;
     symbol = _symbol;
     proxyRegistryAddress = _proxyRegistryAddress;
-  }
-
-  /**
-    * @dev Gets the contract name, for backwards compatibility with ERC-721 metadata
-    * @return string representing the token name
-    */
-  function name() external view returns (string memory) {
-    return _name;
-  }
-
-  /**
-    * @dev Gets the contract symbol, for backwards compatibility with ERC-721 metadata
-    * @return string representing the token symbol
-    */
-  function symbol() external view returns (string memory) {
-    return _symbol;
   }
 
   function uri(
@@ -101,15 +89,15 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     * @dev Creates a new token type and assigns _initialSupply to an address
     * @param _initialOwner address of the first owner of the token
     * @param _initialSupply amount to supply the first owner
-    * @param _url Optional URI for this token type
+    * @param _uri Optional URI for this token type
     * @param _data Data to pass if receiver is contract
     * @return The newly created token ID
     */
   function create(
     address _initialOwner,
     uint256 _initialSupply,
-    string memory _uri,
-    bytes memory _data
+    string calldata _uri,
+    bytes calldata _data
   ) external returns (uint256) {
 
     uint256 _id = _getNextTokenID();
@@ -121,7 +109,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     }
 
     _mint(_initialOwner, _id, _initialSupply, _data);
-    tokenSupply[_id] = initialSupply;
+    tokenSupply[_id] = _initialSupply;
     return _id;
   }
 
@@ -137,9 +125,9 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
     uint256 _id,
     uint256 _quantity,
     bytes memory _data
-  ) public onlyCreator(_id) {
+  ) public creatorOnly(_id) {
     _mint(_to, _id, _quantity, _data);
-    tokenSupply[_id] += quantity;
+    tokenSupply[_id] += _quantity;
   }
 
   /**
@@ -199,7 +187,7 @@ contract ERC1155Tradable is ERC1155Metadata, ERC1155MintBurn, Ownable {
   )
     external
     view
-    returns (bool)
+    returns (bool isOperator)
   {
     // Whitelist OpenSea proxy contract for easy trading.
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.8;
 
 /**
  * This is a generic factory contract that can be used to mint tokens. The configuration
@@ -47,5 +47,5 @@ interface IFactory {
     * @param _amount amount of the option to mint
     * @param _data Extra data to pass during safeTransferFrom
     */
-  function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes _data) external;
+  function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes calldata _data) external;
 }

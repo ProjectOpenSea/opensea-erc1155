@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.8;
 
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
@@ -22,7 +22,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     Divine,
     Hidden
   }
-  uint256 numClasses = 6;
+  uint256 constant numClasses = 6;
 
   struct OptionSettings {
     uint256 price;
@@ -35,15 +35,18 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
   mapping (uint256 => uint256) public classToTokenID;
   uint256 nonce = 0;
 
+  /**
+   * @dev Set the settings for a particular lootbox option
+   */
   function setOptionSettings(
     Option _option,
     uint256 _price,
     uint256 _quantityPerOpen,
     uint256 _totalSupply,
-    uint16[numClasses] _classProbabilities
+    uint16[numClasses] calldata _classProbabilities
   ) external onlyOwner {
 
-    OptionSettings memory settings = OptionSettings({
+    OptionSettings storage settings = OptionSettings({
       price: _price,
       quantityPerOpen: _quantityPerOpen,
       totalSupply: _totalSupply,
@@ -53,13 +56,16 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     optionToSettings[uint256(_option)] = settings;
   }
 
-  // TODO add the ability to open multiple at a time
+  /**
+   * @notice Buy a particular lootbox option
+   * TODO add the ability to open multiple at a time
+   */
   function open(
     Option _option
   ) public payable nonReentrant {
 
     uint256 optionId = uint256(_option);
-    OptionSettings settings = optionToSettings[optionId];
+    OptionSettings memory settings = optionToSettings[optionId];
     uint256 price = settings.price;
     require(msg.value == price, "MyLootBox#open: INVALID_PAYMENT");
     require(canMint(_option), "MyLootBox#open: CANNOT_MINT");
@@ -104,13 +110,13 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
   }
 
   function _pickRandomClass(
-    uint16[numClasses] _classProbabilities
+    uint16[numClasses] memory _classProbabilities
   ) public view returns (uint256) {
     Class class = Class.Common;
     uint16 value = uint16(_random() % 100);
     // Start at top class (length - 1)
     // skip common (0), we default to it
-    for (uint256 i = numClasses - 1; i > 0; i--) {
+    for (uint256 i = _classProbabilities.length - 1; i > 0; i--) {
       uint16 probability = _classProbabilities[i];
       if (value < probability) {
         return Class(i);
