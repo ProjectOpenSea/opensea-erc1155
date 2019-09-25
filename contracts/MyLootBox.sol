@@ -22,7 +22,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     Divine,
     Hidden
   }
-  uint256 constant numClasses = 6;
+  uint256 constant NUM_CLASSES = 6;
 
   struct OptionSettings {
     uint256 price;
@@ -44,7 +44,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     uint256 _price,
     uint256 _quantityPerOpen,
     uint256 _totalSupply,
-    uint16[numClasses] calldata _classProbabilities
+    uint16[NUM_CLASSES] calldata _classProbabilities
   ) external onlyOwner {
 
     OptionSettings storage settings = OptionSettings({
@@ -73,10 +73,13 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     require(msg.value == price, "MyLootBox#open: INVALID_PAYMENT");
     require(canMint(_option, _quantity, settings), "MyLootBox#open: CANNOT_MINT");
 
-    // Iterate for items per box
-    for (uint256 i = 0; i < settings.quantityPerOpen; i++) {
-      Class class = _pickRandomClass(settings.classProbabilities);
-      _mintClass(class, msg.sender, 1);
+    // Iterate for quantity
+    for (uint256 i = 0; i < _quantity; i++) {
+      // Iterate for items per box
+      for (uint256 j = 0; j < settings.quantityPerOpen; j++) {
+        Class class = _pickRandomClass(settings.classProbabilities);
+        _mintClass(class, msg.sender, 1);
+      }
     }
 
     optionToAmountOpened[optionId] = optionToAmountOpened[optionId] + _quantity;
@@ -121,7 +124,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
   }
 
   function _pickRandomClass(
-    uint16[numClasses] memory _classProbabilities
+    uint16[NUM_CLASSES] memory _classProbabilities
   ) public view returns (uint256) {
     uint16 value = uint16(_random() % 100);
     // Start at top class (length - 1)
