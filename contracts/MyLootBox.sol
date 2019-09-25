@@ -1,5 +1,7 @@
 pragma solidity ^0.5.11;
 
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "./MyCollectible.sol";
 import "./MyFactory.sol";
 
@@ -7,84 +9,123 @@ import "./MyFactory.sol";
  * @title MyLootBox
  * MyLootBox - a randomized and openable lootbox of MyCollectibles
  */
-contract MyLootBox is MyFactory {
+contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
 
-  event LootBoxPurchased(uint256 indexed id, address indexed buyer, uint256 count);
+  event LootBoxPurchased(uint256 indexed optionId, address indexed buyer, uint256 count);
 
-  // enum Rarity {
-  //   Common,
-  //   Rare,
-  //   Epic,
-  //   Legendary,
-  //   Divine,
-  //   Hidden
-  // }
-
-  struct BoxType {
-    uint256 id;
-    uint256 price;
-    // uint256 quantityPerOpen;
-    uint256 totalSupply;
-    uint256[] rarityDropRates;
+  // Must be sorted by rarity
+  enum Class {
+    Common,
+    Rare,
+    Epic,
+    Legendary,
+    Divine,
+    Hidden
   }
+  uint256 numClasses = 6;
 
-  BoxType[] boxTypes;
-  uint256 totalRarities = 0;
-  mapping (uint256 => uint256) public rarityToTokenID;
+  struct OptionSettings {
+    uint256 price;
+    uint256 quantityPerOpen;
+    uint256 totalSupply;
+    uint16[] classProbabilities;
+  }
+  mapping (uint256 => OptionSettings) public optionToSettings;
+
+  mapping (uint256 => uint256) public classToTokenID;
   uint256 nonce = 0;
 
-  function addBoxType(
+  function setOptionSettings(
+    Option _option,
     uint256 _price,
     uint256 _quantityPerOpen,
     uint256 _totalSupply,
-    uint256[] _rarityDropRates
-  ) public onlyOwner {
+    uint16[numClasses] _classProbabilities
+  ) external onlyOwner {
 
-    // require(_rarityDropRates.length == Rarity.length, "MyLootBox#addBoxType: WRONG_DROPRATES_LENGTH");
-
-    MyCollectible collectible = MyCollectible(nftAddress);
-    uint256 id = collectible.create(msg.sender, 0, "");
-
-    BoxType memory box = BoxType({
-      id: boxTypes.length,
+    OptionSettings memory settings = OptionSettings({
       price: _price,
       quantityPerOpen: _quantityPerOpen,
       totalSupply: _totalSupply,
-      rarityDropRates: _rarityDropRates
+      classProbabilities: _classProbabilities
     });
 
-    boxTypes.push(box);
+    optionToSettings[uint256(_option)] = settings;
   }
 
-  function open(uint256 _boxIndex) public payable {
-    require(_boxIndex < boxTypes.length, "MyLootBox#open: INVALID_ID");
-    BoxType box = boxTypes[_boxIndex];
-    uint256 price = box.price;
-    require(msg.value >= price, "MyLootBox#open: INSUFFICIENT_FUNDS");
-    address(this).transfer(price);
+  // TODO add the ability to open multiple at a time
+  function open(
+    Option _option
+  ) public payable nonReentrant {
 
-    uint256 random = _random();
-    MyCollectible collectible = MyCollectible(nftAddress);
-    for (uint256 i = 0; i < box.rarityDropRates.length; i++) {
-      uint256 tokenId = rarityToTokenID[i];
-      uint256 dropRate = box.rarityDropRates[i];
-      if (random % 100 < dropRate * 100) {
-        collectible.mint(msg.sender, tokenId, 1, "");
-      }
+    uint256 optionId = uint256(_option);
+    OptionSettings settings = optionToSettings[optionId];
+    uint256 price = settings.price;
+    require(msg.value == price, "MyLootBox#open: INVALID_PAYMENT");
+    require(canMint(_option), "MyLootBox#open: CANNOT_MINT");
+
+    // Iterate for items per box
+    for (uint256 i = 0; i < settings.quantityPerOpen; i++) {
+      Class class = _pickRandomClass(settings.classProbabilities);
+      _mintClass(class, msg.sender, 1);
     }
 
-    emit LootBoxPurchased(_boxIndex, msg.sender, 1);
+    emit LootBoxPurchased(optionId, msg.sender, 1);
+  }
+
+  function canMint(
+    Option _option,
+    uint256 _amount
+  ) public view returns (bool) {
+    return !paused();
   }
 
   function withdraw() public onlyOwner {
     owner().transfer(address(this).balance);
   }
 
+  /////
+  // HELPER FUNCTIONS
+  /////
+
+  function _mintClass(
+    Class _class,
+    address _toAddress,
+    uint256 _amount
+  ) internal {
+    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
+    uint256 id = classToTokenID[uint256(_class)];
+    if (id == 0) {
+      id = openSeaMyCollectible.create(_toAddress, _amount, "", "");
+      classToTokenID[uint256(_class)] = id;
+    } else {
+      openSeaMyCollectible.mint(_toAddress, id, _amount, "");
+    }
+  }
+
+  function _pickRandomClass(
+    uint16[numClasses] _classProbabilities
+  ) public view returns (uint256) {
+    Class class = Class.Common;
+    uint16 value = uint16(_random() % 100);
+    // Start at top class (length - 1)
+    // skip common (0), we default to it
+    for (uint256 i = numClasses - 1; i > 0; i--) {
+      uint16 probability = _classProbabilities[i];
+      if (value < probability) {
+        return Class(i);
+      } else {
+        value = value - probability;
+      }
+    }
+    return class;
+  }
+
   /**
    * @dev Pseudo-random number generator
    */
   function _random() internal returns (uint256) {
-    uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce)));
+    uint256 randomNumber = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, nonce)));
     nonce++;
     return randomNumber;
   }

@@ -74,7 +74,7 @@ contract MyFactory is IFactory, Ownable {
     MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
     uint256 id = optionToTokenID[_optionId];
     if (id == 0) {
-      id = openSeaMyCollectible.create(_toAddress, _amount, _data);
+      id = openSeaMyCollectible.create(_toAddress, _amount, "", _data);
       optionToTokenID[_optionId] = id;
     } else {
       openSeaMyCollectible.mint(_toAddress, id, _amount, _data);
