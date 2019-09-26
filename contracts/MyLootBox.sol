@@ -96,7 +96,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     return (
       !paused() &&
       _amount > 0 &&
-      _amount + amountOpened <= settings.totalSupply
+      _amount + amountOpened <= _settings.totalSupply
     );
   }
 
