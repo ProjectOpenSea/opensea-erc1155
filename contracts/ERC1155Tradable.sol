@@ -88,6 +88,7 @@ contract ERC1155Tradable is ERC1155, ERC1155MintBurn, ERC1155Metadata, Ownable {
 
   /**
     * @dev Creates a new token type and assigns _initialSupply to an address
+    * NOTE: remove onlyOwner if you want third parties to create new tokens on your contract (which may change your IDs)
     * @param _initialOwner address of the first owner of the token
     * @param _initialSupply amount to supply the first owner
     * @param _uri Optional URI for this token type
@@ -99,7 +100,7 @@ contract ERC1155Tradable is ERC1155, ERC1155MintBurn, ERC1155Metadata, Ownable {
     uint256 _initialSupply,
     string calldata _uri,
     bytes calldata _data
-  ) external returns (uint256) {
+  ) external onlyOwner returns (uint256) {
 
     uint256 _id = _getNextTokenID();
     _incrementTokenTypeId();

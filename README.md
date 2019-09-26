@@ -37,7 +37,7 @@ sudo npm explore npm -g -- npm install node-gyp@latest # Update node-gyp
 ```
 export INFURA_KEY="<infura_key>"
 export MNEMONIC="<metmask_mnemonic>"
-truffle deploy --network rinkeby
+truffle migrate --network rinkeby
 ```
 
 ### Minting tokens.
