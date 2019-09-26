@@ -98,7 +98,7 @@ contract MyFactory is IFactory, Ownable {
    * Use safeTransferFrom so the frontend doesn't have to worry about different method names.
    */
   function safeTransferFrom(
-    address _from,
+    address /* _from */,
     address _to,
     uint256 _optionId,
     uint256 _amount,
@@ -136,7 +136,7 @@ contract MyFactory is IFactory, Ownable {
    * Hack to get things to work automatically on OpenSea.
    */
   function balanceOf(address _owner, uint256 _optionId) public view returns (uint256) {
-    if (owner != owner()) {
+    if (_owner != owner()) {
       return 0;
     }
     uint256 id = optionToTokenID[_optionId];

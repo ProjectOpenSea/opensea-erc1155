@@ -1,6 +1,7 @@
 pragma solidity ^0.5.11;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155.sol';
 import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155Metadata.sol';
 import 'multi-token-standard/contracts/tokens/ERC1155/ERC1155MintBurn.sol';
 import "./Strings.sol";
@@ -16,7 +17,7 @@ contract ProxyRegistry {
  * ERC1155Tradable - ERC1155 contract that whitelists an operator address, has create and mint functionality, and supports useful standards from OpenZeppelin,
   like _exists(), name(), symbol(), and totalSupply()
  */
-contract ERC1155Tradable is ERC1155MintBurn, ERC1155Metadata, Ownable {
+contract ERC1155Tradable is ERC1155, ERC1155MintBurn, ERC1155Metadata, Ownable {
   using Strings for string;
 
   address proxyRegistryAddress;
@@ -153,6 +154,26 @@ contract ERC1155Tradable is ERC1155MintBurn, ERC1155Metadata, Ownable {
   }
 
   /**
+   * Override isApprovedForAll to whitelist user's OpenSea proxy accounts to enable gas-free listings.
+   */
+  function isApprovedForAll(
+    address _owner,
+    address _operator
+  )
+    external
+    view
+    returns (bool isOperator)
+  {
+    // Whitelist OpenSea proxy contract for easy trading.
+    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
+    if (address(proxyRegistry.proxies(_owner)) == _operator) {
+      return true;
+    }
+
+    return ERC1155(super).isApprovedForAll(_owner, _operator);
+  }
+
+  /**
     * @dev Returns whether the specified token exists by checking to see if it has a creator
     * @param _id uint256 ID of the token to query the existence of
     * @return bool whether the token exists
@@ -176,25 +197,5 @@ contract ERC1155Tradable is ERC1155MintBurn, ERC1155Metadata, Ownable {
     */
   function _incrementTokenTypeId() private  {
     _currentTokenID++;
-  }
-
-  /**
-   * Override isApprovedForAll to whitelist user's OpenSea proxy accounts to enable gas-less listings.
-   */
-  function isApprovedForAll(
-    address owner,
-    address operator
-  )
-    external
-    view
-    returns (bool isOperator)
-  {
-    // Whitelist OpenSea proxy contract for easy trading.
-    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
-    if (address(proxyRegistry.proxies(owner)) == operator) {
-      return true;
-    }
-
-    return super.isApprovedForAll(owner, operator);
   }
 }

@@ -28,7 +28,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     uint256 price;
     uint256 quantityPerOpen;
     uint256 totalSupply;
-    uint16[] classProbabilities;
+    uint16[NUM_CLASSES] classProbabilities;
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
   mapping (uint256 => uint256) public optionToAmountOpened;
@@ -47,7 +47,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     uint16[NUM_CLASSES] calldata _classProbabilities
   ) external onlyOwner {
 
-    OptionSettings storage settings = OptionSettings({
+    OptionSettings memory settings = OptionSettings({
       price: _price,
       quantityPerOpen: _quantityPerOpen,
       totalSupply: _totalSupply,
@@ -65,38 +65,44 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
   function open(
     Option _option,
     uint256 _quantity
-  ) public payable nonReentrant {
+  ) public payable whenNotPaused nonReentrant {
 
+    // Load settings for this box option
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
-    uint256 price = settings.price * _quantity;
-    require(msg.value == price, "MyLootBox#open: INVALID_PAYMENT");
-    require(canMint(_option, _quantity, settings), "MyLootBox#open: CANNOT_MINT");
 
-    // Iterate for quantity
+    // Check parameters
+    uint256 totalPrice = settings.price * _quantity;
+    require(msg.value == totalPrice, "MyLootBox#open: INVALID_PAYMENT");
+    require(canMint(_option, _quantity), "MyLootBox#open: CANNOT_MINT");
+
+    // Iterate over the quantity of boxes specified
     for (uint256 i = 0; i < _quantity; i++) {
-      // Iterate for items per box
+      // Iterate over the box's set quantity
       for (uint256 j = 0; j < settings.quantityPerOpen; j++) {
         Class class = _pickRandomClass(settings.classProbabilities);
         _mintClass(class, msg.sender, 1);
       }
     }
 
+    // Record how many boxes were opened
+    // (Class minting is recorded in the MyCollectible contract)
     optionToAmountOpened[optionId] = optionToAmountOpened[optionId] + _quantity;
 
+    // Event emissions
     emit LootBoxPurchased(optionId, msg.sender, _quantity);
   }
 
   function canMint(
     Option _option,
-    uint256 _amount,
-    OptionSettings memory _settings
+    uint256 _amount
   ) public view returns (bool) {
-    uint256 amountOpened = optionToAmountOpened[uint256(_option)];
+    uint256 optionId = uint256(_option);
+    OptionSettings memory settings = optionToSettings[optionId];
+    uint256 amountOpened = optionToAmountOpened[optionId];
     return (
-      !paused() &&
       _amount > 0 &&
-      _amount + amountOpened <= _settings.totalSupply
+      _amount + amountOpened <= settings.totalSupply
     );
   }
 
@@ -125,7 +131,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
 
   function _pickRandomClass(
     uint16[NUM_CLASSES] memory _classProbabilities
-  ) public view returns (uint256) {
+  ) public returns (Class) {
     uint16 value = uint16(_random() % 100);
     // Start at top class (length - 1)
     // skip common (0), we default to it
