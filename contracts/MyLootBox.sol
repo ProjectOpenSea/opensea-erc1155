@@ -148,6 +148,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
 
   /**
    * @dev Pseudo-random number generator
+   * NOTE: to improve randomness, generate it with an oracle
    */
   function _random() internal returns (uint256) {
     uint256 randomNumber = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, nonce)));
