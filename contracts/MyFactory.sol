@@ -8,6 +8,7 @@ import "./Strings.sol";
 // WIP
 contract MyFactory is IFactory, Ownable {
   using Strings for string;
+  using SafeMath for uint256;
 
   address public proxyRegistryAddress;
   address public nftAddress;
@@ -132,7 +133,7 @@ contract MyFactory is IFactory, Ownable {
 
     MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
     uint256 currentSupply = openSeaMyCollectible.totalSupply(id);
-    return SUPPLY_PER_TOKEN_ID - currentSupply;
+    return SUPPLY_PER_TOKEN_ID.sub(currentSupply);
   }
 
   function _canMint(

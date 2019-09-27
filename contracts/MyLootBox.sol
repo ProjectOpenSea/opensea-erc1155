@@ -11,8 +11,10 @@ import "./MyFactory.sol";
  * MyLootBox - a randomized and openable lootbox of MyCollectibles
  */
 contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
+  using SafeMath for uint256;
 
-  event LootBoxPurchased(uint256 indexed optionId, address indexed buyer, uint256 count);
+  // Event for logging lootbox purchases
+  event LootBoxPurchased(uint256 indexed optionId, address indexed buyer, uint256 boxesPurchased, uint256 itemsMinted);
 
   // Must be sorted by rarity
   enum Class {
@@ -26,22 +28,49 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   uint256 constant NUM_CLASSES = 6;
 
   struct OptionSettings {
+    // Price in wei of the whole lootbox
     uint256 price;
+    // Number of items to send per open.
+    // Set to 0 to disable this Option.
     uint256 quantityPerOpen;
+    // Total number of lootbox opens available
+    // If zero, it's unlimited
     uint256 totalSupply;
+    // Probability out of 100 of receiving each class (descending)
     uint16[NUM_CLASSES] classProbabilities;
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
   mapping (uint256 => uint256) public optionToAmountOpened;
-
-  mapping (uint256 => uint256) public classToTokenID;
+  mapping (uint256 => uint256) public classToTokenId;
+  mapping (uint256 => bool) classIsPreminted;
   uint256 nonce = 0;
 
-  constructor(address _proxyRegistryAddress, address _nftAddress) MyFactory(
+  constructor(
+    address _proxyRegistryAddress,
+    address _nftAddress,
+    bool _isPreminted
+  ) MyFactory(
     _proxyRegistryAddress,
     _nftAddress
   ) public {
     // Constructor
+  }
+
+  //////
+  // INITIALIZATION FUNCTIONS FOR OWNER
+  //////
+
+  /*
+   * @dev
+   * If the tokens for some class are pre-minted, this mapping can be updated
+   */
+  function setTokenIdForClass(
+    Class _class,
+    uint256 tokenId
+  ) external onlyOwner {
+    uint256 classId = uint256(_class);
+    classIsPreminted[classId] = true;
+    classToTokenId[classId] = tokenId;
   }
 
   /**
@@ -64,6 +93,10 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
     optionToSettings[uint256(_option)] = settings;
   }
+
+  ///////
+  // MAIN FUNCTIONS
+  //////
 
   /**
    * @notice Buy a particular lootbox option
@@ -89,7 +122,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
       // Iterate over the box's set quantity
       for (uint256 j = 0; j < settings.quantityPerOpen; j++) {
         Class class = _pickRandomClass(settings.classProbabilities);
-        _mintClass(class, msg.sender, 1);
+        _sendTokenWithClass(class, msg.sender, 1);
       }
     }
 
@@ -98,7 +131,10 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     optionToAmountOpened[optionId] = optionToAmountOpened[optionId] + _quantity;
 
     // Event emissions
-    emit LootBoxPurchased(optionId, msg.sender, _quantity);
+    uint256 totalMinted = _quantity.mul(settings.quantityPerOpen);
+    if (totalMinted > 0) {
+      emit LootBoxPurchased(optionId, msg.sender, _quantity, totalMinted);
+    }
   }
 
   function _canMint(
@@ -110,7 +146,9 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 amountOpened = optionToAmountOpened[optionId];
     return (
       _amount > 0 &&
-      _amount + amountOpened <= settings.totalSupply
+      ( settings.totalSupply == 0 ||
+        _amount + amountOpened <= settings.totalSupply
+      )
     );
   }
 
@@ -138,19 +176,30 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   // HELPER FUNCTIONS
   /////
 
-  function _mintClass(
+  // Returns the tokenId sent to _toAddress
+  function _sendTokenWithClass(
     Class _class,
     address _toAddress,
     uint256 _amount
-  ) internal {
+  ) internal returns (uint256) {
+    uint256 classId = uint256(_class);
     MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
-    uint256 id = classToTokenID[uint256(_class)];
-    if (id == 0) {
-      id = openSeaMyCollectible.create(_toAddress, _amount, "", "");
-      classToTokenID[uint256(_class)] = id;
+    uint256 tokenId = classToTokenId[classId];
+    if (classIsPreminted[classId]) {
+      openSeaMyCollectible.safeTransferFrom(
+        address(this),
+        _toAddress,
+        tokenId,
+        _amount,
+        ""
+      );
+    } else if (tokenId == 0) {
+      tokenId = openSeaMyCollectible.create(_toAddress, _amount, "", "");
+      classToTokenId[classId] = tokenId;
     } else {
-      openSeaMyCollectible.mint(_toAddress, id, _amount, "");
+      openSeaMyCollectible.mint(_toAddress, tokenId, _amount, "");
     }
+    return tokenId;
   }
 
   function _pickRandomClass(
