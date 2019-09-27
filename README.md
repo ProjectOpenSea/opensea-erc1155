@@ -29,7 +29,7 @@ yarn
 ```
 export INFURA_KEY="<infura_key>"
 export MNEMONIC="<metmask_mnemonic>"
-truffle migrate --network rinkeby
+yarn truffle migrate --network rinkeby
 ```
 
 ### Minting tokens.
