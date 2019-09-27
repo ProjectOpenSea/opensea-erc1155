@@ -131,8 +131,8 @@ contract MyFactory is IFactory, Ownable {
       return SUPPLY_PER_TOKEN_ID;
     }
 
-    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
-    uint256 currentSupply = openSeaMyCollectible.totalSupply(id);
+    MyCollectible nftContract = MyCollectible(nftAddress);
+    uint256 currentSupply = nftContract.totalSupply(id);
     return SUPPLY_PER_TOKEN_ID.sub(currentSupply);
   }
 
@@ -152,13 +152,13 @@ contract MyFactory is IFactory, Ownable {
   ) internal onlyOwner {
     require(_canMint(_option, _amount), "MyFactory#mint: CANNOT_MINT_MORE");
     uint256 optionId = uint256(_option);
-    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
+    MyCollectible nftContract = MyCollectible(nftAddress);
     uint256 id = optionToTokenID[optionId];
     if (id == 0) {
-      id = openSeaMyCollectible.create(_toAddress, _amount, "", _data);
+      id = nftContract.create(_toAddress, _amount, "", _data);
       optionToTokenID[optionId] = id;
     } else {
-      openSeaMyCollectible.mint(_toAddress, id, _amount, _data);
+      nftContract.mint(_toAddress, id, _amount, _data);
     }
   }
 }

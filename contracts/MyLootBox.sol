@@ -47,8 +47,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
   constructor(
     address _proxyRegistryAddress,
-    address _nftAddress,
-    bool _isPreminted
+    address _nftAddress
   ) MyFactory(
     _proxyRegistryAddress,
     _nftAddress
@@ -183,10 +182,10 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 _amount
   ) internal returns (uint256) {
     uint256 classId = uint256(_class);
-    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
+    MyCollectible nftContract = MyCollectible(nftAddress);
     uint256 tokenId = classToTokenId[classId];
     if (classIsPreminted[classId]) {
-      openSeaMyCollectible.safeTransferFrom(
+      nftContract.safeTransferFrom(
         address(this),
         _toAddress,
         tokenId,
@@ -194,10 +193,10 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
         ""
       );
     } else if (tokenId == 0) {
-      tokenId = openSeaMyCollectible.create(_toAddress, _amount, "", "");
+      tokenId = nftContract.create(_toAddress, _amount, "", "");
       classToTokenId[classId] = tokenId;
     } else {
-      openSeaMyCollectible.mint(_toAddress, tokenId, _amount, "");
+      nftContract.mint(_toAddress, tokenId, _amount, "");
     }
     return tokenId;
   }
