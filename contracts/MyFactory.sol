@@ -55,38 +55,23 @@ contract MyFactory is IFactory, Ownable {
     return "MCP";
   }
 
-  function supportsFactoryInterface() public view returns (bool) {
+  function supportsFactoryInterface() external view returns (bool) {
     return true;
   }
 
-  function numOptions() public view returns (uint256) {
+  function numOptions() external view returns (uint256) {
     return NUM_OPTIONS;
   }
 
-  function mint(
-    uint256 _optionId,
-    address _toAddress,
-    uint256 _amount,
-    bytes memory _data
-  ) public onlyOwner {
-    Option option = Option(_optionId);
-    require(canMint(option, _amount), "MyFactory#mint: CANNOT_MINT_MORE");
-    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
-    uint256 id = optionToTokenID[_optionId];
-    if (id == 0) {
-      id = openSeaMyCollectible.create(_toAddress, _amount, "", _data);
-      optionToTokenID[_optionId] = id;
-    } else {
-      openSeaMyCollectible.mint(_toAddress, id, _amount, _data);
-    }
+  function canMint(uint256 _optionId, uint256 _amount) external view returns (bool) {
+    return _canMint(Option(_optionId), _amount);
   }
 
-  function canMint(Option _option, uint256 _amount) public view returns (bool) {
-    uint256 optionId = uint256(_option);
-    return balanceOf(owner(), optionId) >= _amount;
+  function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes calldata _data) external {
+    return _mint(Option(_optionId), _toAddress, _amount, _data);
   }
 
-  function uri(uint256 _optionId) public view returns (string memory) {
+  function uri(uint256 _optionId) external view returns (string memory) {
     return Strings.strConcat(
       baseMetadataURI,
       Strings.uint2str(_optionId)
@@ -104,7 +89,7 @@ contract MyFactory is IFactory, Ownable {
     uint256 _amount,
     bytes memory _data
   ) public {
-    mint(_optionId, _to, _amount, _data);
+    _mint(Option(_optionId), _to, _amount, _data);
   }
 
   /**
@@ -148,5 +133,31 @@ contract MyFactory is IFactory, Ownable {
     MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
     uint256 currentSupply = openSeaMyCollectible.totalSupply(id);
     return SUPPLY_PER_TOKEN_ID - currentSupply;
+  }
+
+  function _canMint(
+    Option _option,
+    uint256 _amount
+  ) internal view returns (bool) {
+    uint256 optionId = uint256(_option);
+    return balanceOf(owner(), optionId) >= _amount;
+  }
+
+  function _mint(
+    Option _option,
+    address _toAddress,
+    uint256 _amount,
+    bytes memory _data
+  ) internal onlyOwner {
+    require(_canMint(_option, _amount), "MyFactory#mint: CANNOT_MINT_MORE");
+    uint256 optionId = uint256(_option);
+    MyCollectible openSeaMyCollectible = MyCollectible(nftAddress);
+    uint256 id = optionToTokenID[optionId];
+    if (id == 0) {
+      id = openSeaMyCollectible.create(_toAddress, _amount, "", _data);
+      optionToTokenID[optionId] = id;
+    } else {
+      openSeaMyCollectible.mint(_toAddress, id, _amount, _data);
+    }
   }
 }

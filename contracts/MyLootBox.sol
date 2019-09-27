@@ -2,6 +2,7 @@ pragma solidity ^0.5.11;
 
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./MyCollectible.sol";
 import "./MyFactory.sol";
 
@@ -9,7 +10,7 @@ import "./MyFactory.sol";
  * @title MyLootBox
  * MyLootBox - a randomized and openable lootbox of MyCollectibles
  */
-contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
+contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
   event LootBoxPurchased(uint256 indexed optionId, address indexed buyer, uint256 count);
 
@@ -35,6 +36,13 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
 
   mapping (uint256 => uint256) public classToTokenID;
   uint256 nonce = 0;
+
+  constructor(address _proxyRegistryAddress, address _nftAddress) MyFactory(
+    _proxyRegistryAddress,
+    _nftAddress
+  ) public {
+    // Constructor
+  }
 
   /**
    * @dev Set the settings for a particular lootbox option
@@ -74,7 +82,7 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     // Check parameters
     uint256 totalPrice = settings.price * _quantity;
     require(msg.value == totalPrice, "MyLootBox#open: INVALID_PAYMENT");
-    require(canMint(_option, _quantity), "MyLootBox#open: CANNOT_MINT");
+    require(_canMint(_option, _quantity), "MyLootBox#open: CANNOT_MINT");
 
     // Iterate over the quantity of boxes specified
     for (uint256 i = 0; i < _quantity; i++) {
@@ -93,10 +101,10 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
     emit LootBoxPurchased(optionId, msg.sender, _quantity);
   }
 
-  function canMint(
+  function _canMint(
     Option _option,
     uint256 _amount
-  ) public view returns (bool) {
+  ) internal view returns (bool) {
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
     uint256 amountOpened = optionToAmountOpened[optionId];
@@ -108,6 +116,22 @@ contract MyLootBox is MyFactory, Pausable, ReentrancyGuard {
 
   function withdraw() public onlyOwner {
     msg.sender.transfer(address(this).balance);
+  }
+
+  /////
+  // IFactory methods
+  /////
+
+  function name() external view returns (string memory) {
+    return "My Loot Box";
+  }
+
+  function symbol() external view returns (string memory) {
+    return "MYLOOT";
+  }
+
+  function canMint(uint256 _optionId, uint256 _amount) external view returns (bool) {
+    return _canMint(Option(_optionId), _amount);
   }
 
   /////

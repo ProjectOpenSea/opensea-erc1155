@@ -1,6 +1,8 @@
-const MyCollectible = artifacts.require("./MyCollectible.sol");
-// const MyFactory = artifacts.require("./MyFactory.sol")
-const MyLootBox = artifacts.require("./MyLootBox.sol");
+const MyCollectible = artifacts.require("MyCollectible");
+const MyLootBox = artifacts.require("MyLootBox");
+
+// Set to false if you only want the collectible to deploy
+const ENABLE_LOOTBOX = true
 
 module.exports = function(deployer, network) {
   // OpenSea proxy registry addresses for rinkeby and mainnet.
@@ -11,18 +13,14 @@ module.exports = function(deployer, network) {
     proxyRegistryAddress = "0xa5409ec958c83c3f309868babaca7c86dcb077c1";
   }
 
-  deployer.deploy(MyCollectible, proxyRegistryAddress, {gas: 5000000});
-  
-  // Uncomment this if you want initial item sale support.
-  // deployer.deploy(MyCollectible, proxyRegistryAddress, {gas: 5000000}).then(() => {
-  //   return deployer.deploy(MyLootBox, proxyRegistryAddress, MyCollectible.address, {gas: 7000000});
-  // }).then(async () => {
-  //   const collectible = await MyCollectible.deployed();
-  //   return collectible.transferOwnership(MyLootBox.address);
-  // }).then(async () => {
-  //   console.log(`FACTORY ADDRESS: ${MyLootBox.address}`);
-  //   console.log(`COLLECTIBLE ADDRESS: ${MyCollectible.address}`);
-  // }).catch((error) => {
-  //   console.error(error);
-  // });
+  if (!ENABLE_LOOTBOX) {
+    deployer.deploy(MyCollectible, proxyRegistryAddress, {gas: 5000000});
+  } else {
+    deployer.deploy(MyCollectible, proxyRegistryAddress, {gas: 5000000}).then(() => {
+      return deployer.deploy(MyLootBox, proxyRegistryAddress, MyCollectible.address, {gas: 5000000});
+    }).then(async () => {
+      const collectible = await MyCollectible.deployed();
+      return collectible.transferOwnership(MyLootBox.address);
+    });
+  }
 };

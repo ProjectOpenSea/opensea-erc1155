@@ -32,6 +32,16 @@ export MNEMONIC="<metmask_mnemonic>"
 yarn truffle migrate --network rinkeby
 ```
 
+### Troubleshooting
+
+#### It doesn't compile!
+Install truffle locally: `yarn add truffle`. Then run `yarn truffle migrate ...`.
+
+You can also debug just the compile step by running `yarn truffle compile`.
+
+#### It doesn't deploy anything!
+This is often due to the truffle-hdwallet provider not being able to connect. Go to infura.io and create a new Infura project. Use your "project ID" as your new `INFURA_KEY` and make sure you export that command-line variable above.
+
 ### Minting tokens.
 
 After deploying to the Rinkeby network, there will be a contract on Rinkeby that will be viewable on [Rinkeby Etherscan](https://rinkeby.etherscan.io). For example, here is a [recently deployed contract](https://rinkeby.etherscan.io/address/0xeba05c5521a3b81e23d15ae9b2d07524bc453561). You should set this contract address and the address of your Metamask account as environment variables when running the minting script:

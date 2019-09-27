@@ -18,7 +18,7 @@
  *
  */
 
-const HDWalletProvider = require("truffle-hdwallet-provider");
+const HDWalletProvider = require("@truffle/hdwallet-provider");
 const MNEMONIC = process.env.MNEMONIC
 // const MNEMONIC = fs.readFileSync(".secret").toString().trim();
 const INFURA_KEY = process.env.INFURA_KEY
@@ -61,7 +61,7 @@ module.exports = {
         );
       },
       network_id: "*",
-      gas: 4000000
+      gas: 4600000
     },
 
     live: {
