@@ -16,15 +16,7 @@ Either make sure you're running a version of node compliant with the `engines` r
 
 Run
 ```bash
-npm install
-```
-
-If you run into an error while building the dependencies and you're on a Mac, run the code below, remove your `node_modules` folder, and do a fresh `npm install`:
-
-```bash
-xcode-select --install # Install Command Line Tools if you haven't already.
-sudo xcode-select --switch /Library/Developer/CommandLineTools # Enable command line tools
-sudo npm explore npm -g -- npm install node-gyp@latest # Update node-gyp
+yarn
 ```
 
 ## Deploying
