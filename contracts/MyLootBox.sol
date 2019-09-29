@@ -34,7 +34,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 quantityPerOpen;
     // Total number of lootbox opens available
     // If zero, it's unlimited
-    uint256 totalSupply;
+    uint256 totalOpensAllowed;
     // Probability out of 100 of receiving each class (descending)
     uint16[NUM_CLASSES] classProbabilities;
   }
@@ -43,6 +43,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   mapping (uint256 => uint256) public classToTokenId;
   mapping (uint256 => bool) classIsPreminted;
   uint256 nonce = 0;
+  uint256 constant UINT256_MAX = ~uint256(0);
 
   constructor(
     address _proxyRegistryAddress,
@@ -73,17 +74,24 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
   /**
    * @dev Set the settings for a particular lootbox option
+   * @param _option The Option to set settings for
+   * @param _quantityPerOpen The number of items to mint per open.
+   *                         Set to 0 to disable this option.
+   * @param _totalOpensAllowed The number of times this Option can be opened.
+   *                           Set to 0 to make it unlimited.
+   * @param _classProbabilities Array of probabilities (integers out of 100) of receiving
+   *                            each class. Should be descending in value.
    */
   function setOptionSettings(
     Option _option,
     uint256 _quantityPerOpen,
-    uint256 _totalSupply,
+    uint256 _totalOpensAllowed,
     uint16[NUM_CLASSES] calldata _classProbabilities
   ) external onlyOwner {
 
     OptionSettings memory settings = OptionSettings({
       quantityPerOpen: _quantityPerOpen,
-      totalSupply: _totalSupply,
+      totalOpensAllowed: _totalOpensAllowed,
       classProbabilities: _classProbabilities
     });
 
@@ -105,11 +113,12 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 _amount,
     bytes memory /* _data */
   ) internal whenNotPaused nonReentrant {
-    require(_canMint(_option, _amount), "MyLootBox#open: CANNOT_MINT");
-
     // Load settings for this box option
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
+
+    require(settings.quantityPerOpen > 0, "MyLootBox#_mint: OPTION_NOT_ALLOWED");
+    require(_canMint(_option, _amount), "MyLootBox#_mint: CANNOT_MINT");
 
     // Iterate over the quantity of boxes specified
     for (uint256 i = 0; i < _amount; i++) {
@@ -122,13 +131,11 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
     // Record how many boxes were opened
     // (Class minting is recorded in the MyCollectible contract)
-    optionToAmountOpened[optionId] = optionToAmountOpened[optionId] + _amount;
+    optionToAmountOpened[optionId] += _amount;
 
     // Event emissions
     uint256 totalMinted = _amount.mul(settings.quantityPerOpen);
-    if (totalMinted > 0) {
-      emit LootBoxOpened(optionId, _toAddress, _amount, totalMinted);
-    }
+    emit LootBoxOpened(optionId, _toAddress, _amount, totalMinted);
   }
 
   /**
@@ -145,13 +152,17 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
       return 0;
     }
     OptionSettings memory settings = optionToSettings[_optionId];
+    if (settings.totalOpensAllowed == 0) {
+      // Unlimited opens, so return a large number
+      return UINT256_MAX;
+    }
     uint256 amountOpened = optionToAmountOpened[_optionId];
-    if (amountOpened > settings.totalSupply) {
-      // This option may have been disabled by the dev
-      // by setting totalSupply to zero
+    if (amountOpened > settings.totalOpensAllowed ||
+        settings.quantityPerOpen == 0) {
+      // This option was disabled by the dev
       return 0;
     }
-    return settings.totalSupply.sub(amountOpened);
+    return settings.totalOpensAllowed.sub(amountOpened);
   }
 
   function withdraw() public onlyOwner {
@@ -159,7 +170,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   }
 
   /////
-  // IFactory methods
+  // Metadata methods
   /////
 
   function name() external view returns (string memory) {

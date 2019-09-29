@@ -142,8 +142,7 @@ contract MyFactory is IFactory, Ownable {
   }
 
   //////
-  // HELPER METHODS
-  // Shouldn't need to be overridden or modified
+  // Below methods shouldn't need to be overridden or modified
   //////
 
   function isApprovedForAll(
