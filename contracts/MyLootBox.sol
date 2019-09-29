@@ -60,13 +60,21 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   //////
 
   /**
-   * @dev If the tokens for some class are pre-minted, the classToTokenId
+   * @dev If the tokens for some class are pre-minted and owned by the
+   * contract owner, the classToTokenId
    * mapping can be updated using this function
    */
   function setTokenIdForClass(
     Class _class,
     uint256 tokenId
   ) external onlyOwner {
+    // Make sure we're approved to transfer
+    MyCollectible nftContract = MyCollectible(nftAddress);
+    require(
+      nftContract.isApprovedForAll(owner(), address(this)),
+      "MyLootbox#setTokenIdForClass: LOOTBOX_CONTRACT_IS_NOT_APPROVED"
+    );
+
     uint256 classId = uint256(_class);
     classIsPreminted[classId] = true;
     classToTokenId[classId] = tokenId;
@@ -196,7 +204,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 tokenId = classToTokenId[classId];
     if (classIsPreminted[classId]) {
       nftContract.safeTransferFrom(
-        address(this),
+        owner(),
         _toAddress,
         tokenId,
         _amount,
