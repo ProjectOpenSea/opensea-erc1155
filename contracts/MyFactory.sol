@@ -48,6 +48,10 @@ contract MyFactory is IFactory, Ownable {
     nftAddress = _nftAddress;
   }
 
+  /////
+  // IFACTORY METHODS
+  /////
+
   function name() external view returns (string memory) {
     return "My Collectible Pre-Sale";
   }
@@ -80,48 +84,35 @@ contract MyFactory is IFactory, Ownable {
   }
 
   /**
-   * Hack to get things to work automatically on OpenSea.
-   * Use safeTransferFrom so the frontend doesn't have to worry about different method names.
+   * @dev Main minting logic implemented here!
    */
-  function safeTransferFrom(
-    address /* _from */,
-    address _to,
-    uint256 _optionId,
+  function _mint(
+    Option _option,
+    address _toAddress,
     uint256 _amount,
     bytes memory _data
-  ) public {
-    _mint(Option(_optionId), _to, _amount, _data);
+  ) internal onlyOwner {
+    require(_canMint(_option, _amount), "MyFactory#_mint: CANNOT_MINT_MORE");
+    uint256 optionId = uint256(_option);
+    MyCollectible nftContract = MyCollectible(nftAddress);
+    uint256 id = optionToTokenID[optionId];
+    if (id == 0) {
+      id = nftContract.create(_toAddress, _amount, "", _data);
+      optionToTokenID[optionId] = id;
+    } else {
+      nftContract.mint(_toAddress, id, _amount, _data);
+    }
   }
 
   /**
-   * Hack to get things to work automatically on OpenSea.
-   * Use isApprovedForAll so the frontend doesn't have to worry about different method names.
+   * Get the factory's ownership of Option.
+   * Should be the amount it can still mint.
+   * NOTE: Called by `canMint`
    */
-  function isApprovedForAll(
+  function balanceOf(
     address _owner,
-    address _operator
-  )
-    public
-    view
-    returns (bool)
-  {
-    if (owner() == _owner && _owner == _operator) {
-      return true;
-    }
-
-    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
-    if (owner() == _owner && address(proxyRegistry.proxies(_owner)) == _operator) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Get the factory's ownership
-   * Hack to get things to work automatically on OpenSea.
-   */
-  function balanceOf(address _owner, uint256 _optionId) public view returns (uint256) {
+    uint256 _optionId
+  ) public view returns (uint256) {
     if (_owner != owner()) {
       return 0;
     }
@@ -136,29 +127,46 @@ contract MyFactory is IFactory, Ownable {
     return SUPPLY_PER_TOKEN_ID.sub(currentSupply);
   }
 
+  /**
+   * Hack to get things to work automatically on OpenSea.
+   * Use safeTransferFrom so the frontend doesn't have to worry about different method names.
+   */
+  function safeTransferFrom(
+    address /* _from */,
+    address _to,
+    uint256 _optionId,
+    uint256 _amount,
+    bytes calldata _data
+  ) external {
+    _mint(Option(_optionId), _to, _amount, _data);
+  }
+
+  //////
+  // HELPER METHODS
+  // Shouldn't need to be overridden or modified
+  //////
+
+  function isApprovedForAll(
+    address _owner,
+    address _operator
+  ) external view returns (bool) {
+    if (owner() == _owner && _owner == _operator) {
+      return true;
+    }
+
+    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
+    if (owner() == _owner && address(proxyRegistry.proxies(_owner)) == _operator) {
+      return true;
+    }
+
+    return false;
+  }
+
   function _canMint(
     Option _option,
     uint256 _amount
   ) internal view returns (bool) {
     uint256 optionId = uint256(_option);
-    return balanceOf(owner(), optionId) >= _amount;
-  }
-
-  function _mint(
-    Option _option,
-    address _toAddress,
-    uint256 _amount,
-    bytes memory _data
-  ) internal onlyOwner {
-    require(_canMint(_option, _amount), "MyFactory#mint: CANNOT_MINT_MORE");
-    uint256 optionId = uint256(_option);
-    MyCollectible nftContract = MyCollectible(nftAddress);
-    uint256 id = optionToTokenID[optionId];
-    if (id == 0) {
-      id = nftContract.create(_toAddress, _amount, "", _data);
-      optionToTokenID[optionId] = id;
-    } else {
-      nftContract.mint(_toAddress, id, _amount, _data);
-    }
+    return _amount > 0 && balanceOf(owner(), optionId) >= _amount;
   }
 }

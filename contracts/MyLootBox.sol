@@ -13,8 +13,8 @@ import "./MyFactory.sol";
 contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   using SafeMath for uint256;
 
-  // Event for logging lootbox purchases
-  event LootBoxPurchased(uint256 indexed optionId, address indexed buyer, uint256 boxesPurchased, uint256 itemsMinted);
+  // Event for logging lootbox opens
+  event LootBoxOpened(uint256 indexed optionId, address indexed buyer, uint256 boxesPurchased, uint256 itemsMinted);
 
   // Must be sorted by rarity
   enum Class {
@@ -27,9 +27,8 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   }
   uint256 constant NUM_CLASSES = 6;
 
+  // NOTE: Price of the lootbox is set via sell orders on OpenSea
   struct OptionSettings {
-    // Price in wei of the whole lootbox
-    uint256 price;
     // Number of items to send per open.
     // Set to 0 to disable this Option.
     uint256 quantityPerOpen;
@@ -59,9 +58,9 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   // INITIALIZATION FUNCTIONS FOR OWNER
   //////
 
-  /*
-   * @dev
-   * If the tokens for some class are pre-minted, this mapping can be updated
+  /**
+   * @dev If the tokens for some class are pre-minted, the classToTokenId
+   * mapping can be updated using this function
    */
   function setTokenIdForClass(
     Class _class,
@@ -77,14 +76,12 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
    */
   function setOptionSettings(
     Option _option,
-    uint256 _price,
     uint256 _quantityPerOpen,
     uint256 _totalSupply,
     uint16[NUM_CLASSES] calldata _classProbabilities
   ) external onlyOwner {
 
     OptionSettings memory settings = OptionSettings({
-      price: _price,
       quantityPerOpen: _quantityPerOpen,
       totalSupply: _totalSupply,
       classProbabilities: _classProbabilities
@@ -98,57 +95,63 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   //////
 
   /**
-   * @notice Buy a particular lootbox option
-   * @param _option The Option to open
-   * @param _quantity The quantity of lootboxes to open
+   * @dev Main minting logic for lootboxes
+   * This is called via safeTransferFrom.
+   * NOTE: prices and fees are determined by the sell order on OpenSea.
    */
-  function open(
+  function _mint(
     Option _option,
-    uint256 _quantity
-  ) public payable whenNotPaused nonReentrant {
+    address _toAddress,
+    uint256 _amount,
+    bytes memory /* _data */
+  ) internal whenNotPaused nonReentrant {
+    require(_canMint(_option, _amount), "MyLootBox#open: CANNOT_MINT");
 
     // Load settings for this box option
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
 
-    // Check parameters
-    uint256 totalPrice = settings.price * _quantity;
-    require(msg.value == totalPrice, "MyLootBox#open: INVALID_PAYMENT");
-    require(_canMint(_option, _quantity), "MyLootBox#open: CANNOT_MINT");
-
     // Iterate over the quantity of boxes specified
-    for (uint256 i = 0; i < _quantity; i++) {
+    for (uint256 i = 0; i < _amount; i++) {
       // Iterate over the box's set quantity
       for (uint256 j = 0; j < settings.quantityPerOpen; j++) {
         Class class = _pickRandomClass(settings.classProbabilities);
-        _sendTokenWithClass(class, msg.sender, 1);
+        _sendTokenWithClass(class, _toAddress, 1);
       }
     }
 
     // Record how many boxes were opened
     // (Class minting is recorded in the MyCollectible contract)
-    optionToAmountOpened[optionId] = optionToAmountOpened[optionId] + _quantity;
+    optionToAmountOpened[optionId] = optionToAmountOpened[optionId] + _amount;
 
     // Event emissions
-    uint256 totalMinted = _quantity.mul(settings.quantityPerOpen);
+    uint256 totalMinted = _amount.mul(settings.quantityPerOpen);
     if (totalMinted > 0) {
-      emit LootBoxPurchased(optionId, msg.sender, _quantity, totalMinted);
+      emit LootBoxOpened(optionId, _toAddress, _amount, totalMinted);
     }
   }
 
-  function _canMint(
-    Option _option,
-    uint256 _amount
-  ) internal view returns (bool) {
-    uint256 optionId = uint256(_option);
-    OptionSettings memory settings = optionToSettings[optionId];
-    uint256 amountOpened = optionToAmountOpened[optionId];
-    return (
-      _amount > 0 &&
-      ( settings.totalSupply == 0 ||
-        _amount + amountOpened <= settings.totalSupply
-      )
-    );
+  /**
+   * When _owner is the contract owner, this will return how many
+   * times a particular Option can still be opened.
+   * NOTE: called by `canMint`
+   */
+  function balanceOf(
+    address _owner,
+    uint256 _optionId
+  ) public view returns (uint256) {
+    if (_owner != owner()) {
+      // No one accept the contract owner offers any lootboxes
+      return 0;
+    }
+    OptionSettings memory settings = optionToSettings[_optionId];
+    uint256 amountOpened = optionToAmountOpened[_optionId];
+    if (amountOpened > settings.totalSupply) {
+      // This option may have been disabled by the dev
+      // by setting totalSupply to zero
+      return 0;
+    }
+    return settings.totalSupply.sub(amountOpened);
   }
 
   function withdraw() public onlyOwner {
@@ -165,10 +168,6 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
   function symbol() external view returns (string memory) {
     return "MYLOOT";
-  }
-
-  function canMint(uint256 _optionId, uint256 _amount) external view returns (bool) {
-    return _canMint(Option(_optionId), _amount);
   }
 
   /////
