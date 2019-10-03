@@ -35,7 +35,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     // Total number of lootbox opens available
     // If zero, it's unlimited
     uint256 totalOpensAllowed;
-    // Probability out of 100 of receiving each class (descending)
+    // Probability in basis points (out of 10,000) of receiving each class (descending)
     uint16[NUM_CLASSES] classProbabilities;
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
@@ -87,8 +87,9 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
    *                         Set to 0 to disable this option.
    * @param _totalOpensAllowed The number of times this Option can be opened.
    *                           Set to 0 to make it unlimited.
-   * @param _classProbabilities Array of probabilities (integers out of 100) of receiving
-   *                            each class. Should be descending in value.
+   * @param _classProbabilities Array of probabilities (basis points, so integers out of 10,000)
+   *                            of receiving each class. Should add up to 10k and be descending
+   *                            in value.
    */
   function setOptionSettings(
     Option _option,
@@ -222,7 +223,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   function _pickRandomClass(
     uint16[NUM_CLASSES] memory _classProbabilities
   ) public returns (Class) {
-    uint16 value = uint16(_random() % 100);
+    uint16 value = uint16(_random() % 10000);
     // Start at top class (length - 1)
     // skip common (0), we default to it
     for (uint256 i = _classProbabilities.length - 1; i > 0; i--) {
