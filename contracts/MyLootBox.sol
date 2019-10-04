@@ -42,6 +42,15 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   uint256 constant UINT256_MAX = ~uint256(0);
   uint256 constant INVERSE_BASIS_POINT = 10000;
 
+  /**
+   * @dev Example constructor. Calls setOptionSettings for you with
+   *      sample settings
+   * @param _proxyRegistryAddress The address of the OpenSea/Wyvern proxy registry
+   *                              On Rinkeby: "0xf57b2c51ded3a29e6891aba85459d600256cf317"
+   *                              On mainnet: "0xa5409ec958c83c3f309868babaca7c86dcb077c1"
+   * @param _nftAddress The address of the non-fungible/semi-fungible item contract
+   *                    that you want to mint/transfer with each open
+   */
   constructor(
     address _proxyRegistryAddress,
     address _nftAddress
@@ -49,7 +58,11 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     _proxyRegistryAddress,
     _nftAddress
   ) public {
-    // Constructor
+    // Example settings and probabilities
+    // you can also call these after deploying
+    setOptionSettings(Option.Basic, 3, [7300, 2100, 400, 100, 50, 50]);
+    setOptionSettings(Option.Premium, 5, [7200, 2100, 400, 200, 50, 50]);
+    setOptionSettings(Option.Gold, 7, [7000, 2100, 400, 400, 50, 50]);
   }
 
   //////
@@ -59,22 +72,28 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   /**
    * @dev If the tokens for some class are pre-minted and owned by the
    * contract owner, the classToTokenId
-   * mapping can be updated using this function
+   * mapping can be updated per-class using this function
    */
   function setTokenIdForClass(
     Class _class,
-    uint256 tokenId
+    uint256 _tokenId
   ) external onlyOwner {
-    // Make sure we're approved to transfer
-    MyCollectible nftContract = MyCollectible(nftAddress);
-    require(
-      nftContract.isApprovedForAll(owner(), address(this)),
-      "MyLootbox#setTokenIdForClass: LOOTBOX_CONTRACT_IS_NOT_APPROVED"
-    );
+    _checkTokenApproval();
+    _setPremintedToken(_class, _tokenId);
+  }
 
-    uint256 classId = uint256(_class);
-    classIsPreminted[classId] = true;
-    classToTokenId[classId] = tokenId;
+  /**
+   * @dev Set token IDs for each rarity class. Bulk version of `setTokenIdForClass`
+   * @param _tokenIds List of token IDs to set for each class, specified above in order
+   */
+  function setTokenIdsForClasses(
+    uint256[NUM_CLASSES] calldata _tokenIds
+  ) external onlyOwner {
+    _checkTokenApproval();
+    for (uint256 i = 0; i < _tokenIds.length; i++) {
+      Class class = Class(i);
+      _setPremintedToken(class, _tokenIds[i]);
+    }
   }
 
   /**
@@ -89,8 +108,8 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   function setOptionSettings(
     Option _option,
     uint256 _quantityPerOpen,
-    uint16[NUM_CLASSES] calldata _classProbabilities
-  ) external onlyOwner {
+    uint16[NUM_CLASSES] memory _classProbabilities
+  ) public onlyOwner {
 
     OptionSettings memory settings = OptionSettings({
       quantityPerOpen: _quantityPerOpen,
@@ -224,5 +243,20 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 randomNumber = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, nonce)));
     nonce++;
     return randomNumber;
+  }
+
+  function _checkTokenApproval() internal {
+    // Make sure we're approved to transfer nftAddress
+    MyCollectible nftContract = MyCollectible(nftAddress);
+    require(
+      nftContract.isApprovedForAll(owner(), address(this)),
+      "MyLootbox#_checkTokenApproval: LOOTBOX_CONTRACT_IS_NOT_APPROVED"
+    );
+  }
+
+  function _setPremintedToken(Class _class, uint256 _tokenId) internal {
+    uint256 classId = uint256(_class);
+    classIsPreminted[classId] = true;
+    classToTokenId[classId] = _tokenId;
   }
 }
