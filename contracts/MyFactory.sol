@@ -36,9 +36,8 @@ contract MyFactory is IFactory, Ownable {
   modifier onlyOwner() {
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
     require(
-      address(proxyRegistry.proxies(owner())) == msg.sender ||
-      owner() == msg.sender,
-      "MyFactory#mint: NOT_AUTHORIZED_TO_MINT"
+      owner() == msg.sender || address(proxyRegistry.proxies(owner())) == msg.sender,
+      "MyFactory#onlyOwner: NOT_OWNER_OR_OWNER_PROXY"
     );
     _;
   }
