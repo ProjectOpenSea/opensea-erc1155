@@ -12,7 +12,7 @@ contract MyFactory is IFactory, Ownable {
 
   address public proxyRegistryAddress;
   address public nftAddress;
-  string internal baseMetadataURI = "https://opensea-creatures-api.herokuapp.com/api/factory/";
+  string constant internal baseMetadataURI = "https://opensea-creatures-api.herokuapp.com/api/";
 
   /**
    * Enforce the existence of only 100 items per option/token ID
@@ -78,6 +78,7 @@ contract MyFactory is IFactory, Ownable {
   function uri(uint256 _optionId) external view returns (string memory) {
     return Strings.strConcat(
       baseMetadataURI,
+      "factory/",
       Strings.uint2str(_optionId)
     );
   }
