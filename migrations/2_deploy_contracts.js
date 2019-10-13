@@ -3,6 +3,8 @@ const MyLootBox = artifacts.require("MyLootBox");
 
 // Set to false if you only want the collectible to deploy
 const ENABLE_LOOTBOX = true
+// If you want to set preminted token ids for specific classes
+const TOKEN_IDS_FOR_CLASSES = [] // [3, 3, 3, 3, 2, 1]
 
 module.exports = function(deployer, network) {
   // OpenSea proxy registry addresses for rinkeby and mainnet.
@@ -20,7 +22,12 @@ module.exports = function(deployer, network) {
       return deployer.deploy(MyLootBox, proxyRegistryAddress, MyCollectible.address, {gas: 5000000});
     }).then(async () => {
       const collectible = await MyCollectible.deployed();
-      return collectible.transferOwnership(MyLootBox.address);
+      await collectible.transferOwnership(MyLootBox.address);
+
+      if (TOKEN_IDS_FOR_CLASSES.length) {
+        const lootbox = await MyLootBox.deployed();
+        await lootbox.setTokenIdsForClasses(TOKEN_IDS_FOR_CLASSES);
+      }
     });
   }
 };

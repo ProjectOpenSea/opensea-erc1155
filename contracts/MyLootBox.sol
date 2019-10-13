@@ -229,7 +229,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
   function _pickRandomClass(
     uint16[NUM_CLASSES] memory _classProbabilities
-  ) public returns (Class) {
+  ) internal returns (Class) {
     uint16 value = uint16(_random() % INVERSE_BASIS_POINT);
     // Start at top class (length - 1)
     // skip common (0), we default to it
