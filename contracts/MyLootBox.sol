@@ -12,7 +12,6 @@ import "./MyFactory.sol";
  */
 contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   using SafeMath for uint256;
-  string internal baseMetadataURI = "https://opensea-creatures-api.herokuapp.com/api/box/";
 
   // Event for logging lootbox opens
   event LootBoxOpened(uint256 indexed optionId, address indexed buyer, uint256 boxesPurchased, uint256 itemsMinted);
