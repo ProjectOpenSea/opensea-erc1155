@@ -38,7 +38,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
   mapping (uint256 => uint256) public classToTokenId;
-  mapping (uint256 => bool) classIsPreminted;
+  mapping (uint256 => bool) public classIsPreminted;
   uint256 nonce = 0;
   uint256 constant UINT256_MAX = ~uint256(0);
   uint256 constant INVERSE_BASIS_POINT = 10000;
@@ -163,7 +163,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
    */
   function balanceOf(
     address _owner,
-    uint256 _optionId
+    uint256 /* _optionId */
   ) public view returns (uint256) {
     if (_owner != owner()) {
       // No one except the contract owner can sell any lootboxes
@@ -254,7 +254,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     return randomNumber;
   }
 
-  function _checkTokenApproval() internal {
+  function _checkTokenApproval() internal view {
     // Make sure we're approved to transfer nftAddress
     MyCollectible nftContract = MyCollectible(nftAddress);
     require(
