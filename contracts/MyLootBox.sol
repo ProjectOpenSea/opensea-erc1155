@@ -5,12 +5,13 @@ import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./MyCollectible.sol";
 import "./MyFactory.sol";
+import "./ILootBox.sol";
 
 /**
  * @title MyLootBox
  * MyLootBox - a randomized and openable lootbox of MyCollectibles
  */
-contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
+contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   using SafeMath for uint256;
 
   // Event for logging lootbox opens
@@ -37,7 +38,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint16[NUM_CLASSES] classProbabilities;
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
-  mapping (uint256 => uint256) public classToTokenId;
+  mapping (uint256 => uint256[]) public classToTokenIds;
   mapping (uint256 => bool) public classIsPreminted;
   uint256 nonce = 0;
   uint256 constant UINT256_MAX = ~uint256(0);
@@ -72,15 +73,25 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
   /**
    * @dev If the tokens for some class are pre-minted and owned by the
-   * contract owner, the classToTokenId
-   * mapping can be updated per-class using this function
+   * contract owner, they can be used for a given class by setting them here
    */
-  function setTokenIdForClass(
-    Class _class,
-    uint256 _tokenId
+  function setClassForTokenId(
+    uint256 _tokenId,
+    uint256 _classId
   ) external onlyOwner {
     _checkTokenApproval();
-    _setPremintedToken(_class, _tokenId);
+    _addTokenIdToClass(Class(_classId), _tokenId);
+  }
+
+  /**
+   * @dev Remove all token ids for a given class, causing it to fall back to
+   * creating/minting into the nft address
+   */
+  function resetClass(
+    uint256 _classId
+  ) external onlyOwner {
+    delete classIsPreminted[_classId];
+    delete classToTokenIds[_classId];
   }
 
   /**
@@ -93,7 +104,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     _checkTokenApproval();
     for (uint256 i = 0; i < _tokenIds.length; i++) {
       Class class = Class(i);
-      _setPremintedToken(class, _tokenIds[i]);
+      _addTokenIdToClass(class, _tokenIds[i]);
     }
   }
 
@@ -125,8 +136,20 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   //////
 
   /**
+   * @dev Open a lootbox manually and send what's inside to _toAddress
+   * Convenience method for contract owner.
+   */
+  function open(
+    Option _option,
+    address _toAddress,
+    uint256 _amount
+  ) external {
+    _mint(_option, _toAddress, _amount, "");
+  }
+
+  /**
    * @dev Main minting logic for lootboxes
-   * This is called via safeTransferFrom.
+   * This is called via safeTransferFrom when MyLootBox extends MyFactory.
    * NOTE: prices and fees are determined by the sell order on OpenSea.
    */
   function _mint(
@@ -134,7 +157,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     address _toAddress,
     uint256 _amount,
     bytes memory /* _data */
-  ) internal whenNotPaused nonReentrant {
+  ) internal onlyOwner whenNotPaused nonReentrant {
     // Load settings for this box option
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
@@ -209,7 +232,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   ) internal returns (uint256) {
     uint256 classId = uint256(_class);
     MyCollectible nftContract = MyCollectible(nftAddress);
-    uint256 tokenId = classToTokenId[classId];
+    uint256 tokenId = _pickRandomTokenIdForClass(_class);
     if (classIsPreminted[classId]) {
       nftContract.safeTransferFrom(
         owner(),
@@ -220,7 +243,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
       );
     } else if (tokenId == 0) {
       tokenId = nftContract.create(_toAddress, _amount, "", "");
-      classToTokenId[classId] = tokenId;
+      classToTokenIds[classId].push(tokenId);
     } else {
       nftContract.mint(_toAddress, tokenId, _amount, "");
     }
@@ -230,7 +253,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
   function _pickRandomClass(
     uint16[NUM_CLASSES] memory _classProbabilities
   ) internal returns (Class) {
-    uint16 value = uint16(_random() % INVERSE_BASIS_POINT);
+    uint16 value = uint16(_random().mod(INVERSE_BASIS_POINT));
     // Start at top class (length - 1)
     // skip common (0), we default to it
     for (uint256 i = _classProbabilities.length - 1; i > 0; i--) {
@@ -242,6 +265,17 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
       }
     }
     return Class.Common;
+  }
+
+  function _pickRandomTokenIdForClass(
+    Class _class
+  ) internal returns (uint256) {
+    uint256[] memory tokenIds = classToTokenIds[uint256(_class)];
+    if (tokenIds.length == 0) {
+      return 0;
+    }
+    uint256 index = _random().mod(tokenIds.length);
+    return tokenIds[index];
   }
 
   /**
@@ -264,9 +298,9 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     }
   }
 
-  function _setPremintedToken(Class _class, uint256 _tokenId) internal {
+  function _addTokenIdToClass(Class _class, uint256 _tokenId) internal {
     uint256 classId = uint256(_class);
     classIsPreminted[classId] = true;
-    classToTokenId[classId] = _tokenId;
+    classToTokenIds[classId].push(_tokenId);
   }
 }
