@@ -160,18 +160,14 @@ contract ERC1155Tradable is ERC1155, ERC1155MintBurn, ERC1155Metadata, Ownable {
   function isApprovedForAll(
     address _owner,
     address _operator
-  )
-    external
-    view
-    returns (bool isOperator)
-  {
+  ) public view returns (bool isOperator) {
     // Whitelist OpenSea proxy contract for easy trading.
     ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
     if (address(proxyRegistry.proxies(_owner)) == _operator) {
       return true;
     }
 
-    return ERC1155(super).isApprovedForAll(_owner, _operator);
+    return ERC1155.isApprovedForAll(_owner, _operator);
   }
 
   /**

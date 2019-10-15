@@ -148,7 +148,7 @@ contract MyFactory is IFactory, Ownable {
   function isApprovedForAll(
     address _owner,
     address _operator
-  ) external view returns (bool) {
+  ) public view returns (bool) {
     if (owner() == _owner && _owner == _operator) {
       return true;
     }

@@ -50,13 +50,6 @@ interface IFactory {
   function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes calldata _data) external;
 
   /**
-   * @dev Get whether the operator (OpenSea) is allowed to transfer items.
-   * Hack to get things to work automatically.
-   * Use isApprovedForAll so the site doesn't have to worry about different method names.
-   */
-  function isApprovedForAll(address _owner, address _operator) external view returns (bool);
-
-  /**
    * @dev Transfers assets to the _to address, minting them out of the factory if needed.
    * Should call the same logic under `mint`
    * @param _from The address to transfer from (ignored)
