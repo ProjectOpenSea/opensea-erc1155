@@ -15,6 +15,7 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
 
   // Event for logging lootbox opens
   event LootBoxOpened(uint256 indexed optionId, address indexed buyer, uint256 boxesPurchased, uint256 itemsMinted);
+  event Warning(string message, address account);
 
   // Must be sorted by rarity
   enum Class {
@@ -253,13 +254,14 @@ contract MyLootBox is Ownable, Pausable, ReentrancyGuard, MyFactory {
     return randomNumber;
   }
 
-  function _checkTokenApproval() internal view {
-    // Make sure we're approved to transfer nftAddress
+  /**
+   * @dev emit a Warning if we're not approved to transfer nftAddress
+   */
+  function _checkTokenApproval() internal {
     MyCollectible nftContract = MyCollectible(nftAddress);
-    require(
-      nftContract.isApprovedForAll(owner(), address(this)),
-      "MyLootbox#_checkTokenApproval: LOOTBOX_CONTRACT_IS_NOT_APPROVED"
-    );
+    if (!nftContract.isApprovedForAll(owner(), address(this))) {
+      emit Warning("Lootbox contract is not approved for trading collectible by:", owner());
+    }
   }
 
   function _setPremintedToken(Class _class, uint256 _tokenId) internal {

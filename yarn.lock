@@ -5521,10 +5521,9 @@ ms@^2.1.1:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-multi-token-standard@0.8.2:
-  version "0.8.2"
-  resolved "https://registry.yarnpkg.com/multi-token-standard/-/multi-token-standard-0.8.2.tgz#7bd2f37b31647a842a2fc7649d8d8d67e6bd0278"
-  integrity sha512-GrAT5KRqkDLAL5gZqT+pO2BCO3EO36Zk9RE+yN50kooAZofrmAlKIIedeI+5EqUQfThKaxnqq2tjV0FbSxeTwg==
+"multi-token-standard@github:ProjectOpenSea/multi-token-standard":
+  version "0.8.4"
+  resolved "https://codeload.github.com/ProjectOpenSea/multi-token-standard/tar.gz/fd5a9089307066067c46606b028fbeaff370c464"
 
 mute-stdout@^1.0.0:
   version "1.0.1"
