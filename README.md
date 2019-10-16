@@ -1,13 +1,22 @@
 ## OpenSea ERC-1155 Starter Contracts
 
-### About ERC-1155.
+### About These Contracts
 
-This is a  simple sample ERC-1155 contract for the purposes of demonstrating integration with the [OpenSea](https://opensea.io) marketplace for crypto collectibles. We include:
+This is a sample ERC-1155 contract for the purposes of demonstrating integration with the [OpenSea](https://opensea.io) marketplace for crypto collectibles. We also include:
 - A script for minting items.
 - A factory contract for making sell orders for unminted items (allowing for **gas-free and mint-free presales**).
 - A configurable lootbox contract for selling randomized collections of ERC-1155 items.
 
-Additionally, this contract whitelists the proxy accounts of OpenSea users so that they are automatically able to trade the ERC-1155 items on OpenSea (without having to pay gas for an additional approval). On OpenSea, each user has a "proxy" account that they control, and is ultimately called by the exchange contracts to trade their items. (Note that this addition does not mean that OpenSea itself has access to the items, simply that the users can list them more easily if they wish to do so)
+On top of the features from the [OpenSea ERC721 sample contracts](https://github.com/ProjectOpenSea/opensea-creatures), ERC1155
+- supports multiple creators per contract, where only the creator is able to mint more copies
+- supports pre-minted items for the lootbox to choose from
+
+
+### Why are some standard methods overridden?
+
+This contract overrides the `isApprovedForAll` method in order to whitelist the proxy accounts of OpenSea users. This means that they are automatically able to trade your ERC-1155 items on OpenSea (without having to pay gas for an additional approval). On OpenSea, each user has a "proxy" account that they control, and is ultimately called by the exchange contracts to trade their items.
+
+Note that this addition does not mean that OpenSea itself has access to the items, simply that the users can list them more easily if they wish to do so!
 
 ## Requirements
 

@@ -72,12 +72,6 @@ interface ILootBox {
   function setClassForTokenId(uint256 _tokenId, uint256 _classId) external;
 
   /**
-   * @dev Set token IDs for each rarity class. Bulk version of `setTokenIdForClass`
-   * @param _tokenIds List of token IDs to set for each class, specified above in order
-   */
-  function setTokenIdsForClasses(uint256[] calldata _tokenIds) external;
-
-  /**
    * @dev Remove all token ids for a given class, causing it to fall back to
    * creating/minting into the nft address
    */

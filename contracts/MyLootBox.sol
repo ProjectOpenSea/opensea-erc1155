@@ -140,11 +140,11 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
    * Convenience method for contract owner.
    */
   function open(
-    Option _option,
+    uint256 _optionId,
     address _toAddress,
     uint256 _amount
   ) external {
-    _mint(_option, _toAddress, _amount, "");
+    _mint(Option(_optionId), _toAddress, _amount, "");
   }
 
   /**
