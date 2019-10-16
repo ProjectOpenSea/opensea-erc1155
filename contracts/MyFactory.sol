@@ -13,11 +13,13 @@ contract MyFactory is IFactory, Ownable {
   address public proxyRegistryAddress;
   address public nftAddress;
   string constant internal baseMetadataURI = "https://opensea-creatures-api.herokuapp.com/api/";
+  uint256 constant UINT256_MAX = ~uint256(0);
 
   /**
-   * Enforce the existence of only 100 items per option/token ID
+   * Optionally set this to a small integer to enforce limited existence per option/token ID
+   * (Otherwise rely on sell orders on OpenSea, which can only be made by the factory owner.)
    */
-  uint256 SUPPLY_PER_TOKEN_ID = 100;
+  uint256 constant SUPPLY_PER_TOKEN_ID = UINT256_MAX;
 
   /**
    * Three different options for minting MyCollectibles (basic, premium, and gold).
@@ -29,18 +31,6 @@ contract MyFactory is IFactory, Ownable {
   }
   uint256 constant NUM_OPTIONS = 3;
   mapping (uint256 => uint256) public optionToTokenID;
-
-  /**
-   * @dev Require msg.sender to be the owner proxy or owner.
-   */
-  modifier onlyOwner() {
-    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
-    require(
-      owner() == msg.sender || address(proxyRegistry.proxies(owner())) == msg.sender,
-      "MyFactory#onlyOwner: NOT_OWNER_OR_OWNER_PROXY"
-    );
-    _;
-  }
 
   constructor(address _proxyRegistryAddress, address _nftAddress) public {
     proxyRegistryAddress = _proxyRegistryAddress;
@@ -72,7 +62,7 @@ contract MyFactory is IFactory, Ownable {
   }
 
   function canMint(uint256 _optionId, uint256 _amount) external view returns (bool) {
-    return _canMint(Option(_optionId), _amount);
+    return _canMint(msg.sender, Option(_optionId), _amount);
   }
 
   function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes calldata _data) external {
@@ -95,8 +85,8 @@ contract MyFactory is IFactory, Ownable {
     address _toAddress,
     uint256 _amount,
     bytes memory _data
-  ) internal onlyOwner {
-    require(_canMint(_option, _amount), "MyFactory#_mint: CANNOT_MINT_MORE");
+  ) internal {
+    require(_canMint(msg.sender, _option, _amount), "MyFactory#_mint: CANNOT_MINT_MORE");
     uint256 optionId = uint256(_option);
     MyCollectible nftContract = MyCollectible(nftAddress);
     uint256 id = optionToTokenID[optionId];
@@ -117,7 +107,9 @@ contract MyFactory is IFactory, Ownable {
     address _owner,
     uint256 _optionId
   ) public view returns (uint256) {
-    if (_owner != owner()) {
+    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
+    if (owner() != _owner && address(proxyRegistry.proxies(owner())) != _owner) {
+      // Only the factory owner or owner's proxy can have supply
       return 0;
     }
     uint256 id = optionToTokenID[_optionId];
@@ -166,10 +158,11 @@ contract MyFactory is IFactory, Ownable {
   }
 
   function _canMint(
+    address _fromAddress,
     Option _option,
     uint256 _amount
   ) internal view returns (bool) {
     uint256 optionId = uint256(_option);
-    return _amount > 0 && balanceOf(owner(), optionId) >= _amount;
+    return _amount > 0 && balanceOf(_fromAddress, optionId) >= _amount;
   }
 }

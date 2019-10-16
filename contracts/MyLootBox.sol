@@ -41,7 +41,6 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   mapping (uint256 => uint256[]) public classToTokenIds;
   mapping (uint256 => bool) public classIsPreminted;
   uint256 nonce = 0;
-  uint256 constant UINT256_MAX = ~uint256(0);
   uint256 constant INVERSE_BASIS_POINT = 10000;
 
   /**
@@ -157,13 +156,13 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     address _toAddress,
     uint256 _amount,
     bytes memory /* _data */
-  ) internal onlyOwner whenNotPaused nonReentrant {
+  ) internal whenNotPaused nonReentrant {
     // Load settings for this box option
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
 
     require(settings.quantityPerOpen > 0, "MyLootBox#_mint: OPTION_NOT_ALLOWED");
-    require(_canMint(_option, _amount), "MyLootBox#_mint: CANNOT_MINT");
+    require(_canMint(msg.sender, _option, _amount), "MyLootBox#_mint: CANNOT_MINT");
 
     // Iterate over the quantity of boxes specified
     for (uint256 i = 0; i < _amount; i++) {
@@ -177,23 +176,6 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     // Event emissions
     uint256 totalMinted = _amount.mul(settings.quantityPerOpen);
     emit LootBoxOpened(optionId, _toAddress, _amount, totalMinted);
-  }
-
-  /**
-   * When _owner is the contract owner, this will return how many
-   * times a particular Option can still be opened.
-   * NOTE: called by `canMint`
-   */
-  function balanceOf(
-    address _owner,
-    uint256 /* _optionId */
-  ) public view returns (uint256) {
-    if (_owner != owner()) {
-      // No one except the contract owner can sell any lootboxes
-      return 0;
-    }
-    // Opens are set via off-chain sell orders, so return a large number
-    return UINT256_MAX;
   }
 
   function withdraw() public onlyOwner {
