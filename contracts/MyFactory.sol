@@ -63,6 +63,10 @@ contract MyFactory is IFactory, Ownable {
     return true;
   }
 
+  function factorySchemaName() external view returns (string memory) {
+    return "ERC1155";
+  }
+
   function numOptions() external view returns (uint256) {
     return NUM_OPTIONS;
   }
