@@ -5523,7 +5523,7 @@ ms@^2.1.1:
 
 "multi-token-standard@github:ProjectOpenSea/multi-token-standard":
   version "0.8.4"
-  resolved "https://codeload.github.com/ProjectOpenSea/multi-token-standard/tar.gz/fd5a9089307066067c46606b028fbeaff370c464"
+  resolved "https://codeload.github.com/ProjectOpenSea/multi-token-standard/tar.gz/de2d0af8852a588c1eb7160b1a5b742d5fa8ce90"
 
 mute-stdout@^1.0.0:
   version "1.0.1"

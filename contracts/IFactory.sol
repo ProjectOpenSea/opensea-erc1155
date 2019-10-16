@@ -54,14 +54,13 @@ interface IFactory {
     */
   function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes calldata _data) external;
 
-  /**
-   * @dev Transfers assets to the _to address, minting them out of the factory if needed.
-   * Should call the same logic under `mint`
-   * @param _from The address to transfer from (ignored)
-   * @param _to The address to transfer to
-   * @param _optionId the option id
-   * @param _amount amount of the option to mint
-   * @param _data Extra data to pass
-   */
+  ///////
+  // Get things to work on OpenSea with mock methods below
+  ///////
+
   function safeTransferFrom(address _from, address _to, uint256 _optionId, uint256 _amount, bytes calldata _data) external;
+
+  function balanceOf(address _owner, uint256 _optionId) external view returns (uint256);
+
+  function isApprovedForAll(address _owner, address _operator) external view returns (bool);
 }

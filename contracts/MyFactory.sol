@@ -107,8 +107,7 @@ contract MyFactory is IFactory, Ownable {
     address _owner,
     uint256 _optionId
   ) public view returns (uint256) {
-    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
-    if (owner() != _owner && address(proxyRegistry.proxies(owner())) != _owner) {
+    if (!_isOwnerOrProxy(_owner)) {
       // Only the factory owner or owner's proxy can have supply
       return 0;
     }
@@ -145,16 +144,7 @@ contract MyFactory is IFactory, Ownable {
     address _owner,
     address _operator
   ) public view returns (bool) {
-    if (owner() == _owner && _owner == _operator) {
-      return true;
-    }
-
-    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
-    if (owner() == _owner && address(proxyRegistry.proxies(_owner)) == _operator) {
-      return true;
-    }
-
-    return false;
+    return owner() == _owner && _isOwnerOrProxy(_operator);
   }
 
   function _canMint(
@@ -164,5 +154,12 @@ contract MyFactory is IFactory, Ownable {
   ) internal view returns (bool) {
     uint256 optionId = uint256(_option);
     return _amount > 0 && balanceOf(_fromAddress, optionId) >= _amount;
+  }
+
+  function _isOwnerOrProxy(
+    address _address
+  ) internal view returns (bool) {
+    ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
+    return owner() == _address || address(proxyRegistry.proxies(owner())) == _address;
   }
 }
