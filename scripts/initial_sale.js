@@ -1,4 +1,5 @@
 const opensea = require('opensea-js')
+const { WyvernSchemaName } = require("opensea-js/lib/types")
 const OpenSeaPort = opensea.OpenSeaPort;
 const Network = opensea.Network;
 const MnemonicWalletSubprovider = require('@0x/subproviders').MnemonicWalletSubprovider
@@ -17,10 +18,10 @@ const DUTCH_AUCTION_START_AMOUNT = 100;
 const DUTCH_AUCTION_END_AMOUNT = 50;    
 const NUM_DUTCH_AUCTIONS = 3;
 
-const FIXED_PRICE_OPTION_ID = "2";
-const FIXED_PRICE_OPTION_IDS = ["3", "4", "5", "6"];
+const FIXED_PRICE_OPTION_ID = "0";
+const FIXED_PRICE_OPTION_IDS = ["0", "1", "2"];
 const NUM_FIXED_PRICE_AUCTIONS = 10;
-const FIXED_PRICE = .05;
+const FIXED_PRICE = .1;
 
 if (!MNEMONIC || !INFURA_KEY || !NETWORK || !OWNER_ADDRESS) {
     console.error("Please set a mnemonic, infura key, owner, network, API key, nft contract, and factory contract address.")
@@ -57,10 +58,11 @@ async function main() {
         factoryAddress: FACTORY_CONTRACT_ADDRESS,
         accountAddress: OWNER_ADDRESS,
         startAmount: FIXED_PRICE,
-        numberOfOrders: NUM_FIXED_PRICE_AUCTIONS
+        numberOfOrders: NUM_FIXED_PRICE_AUCTIONS,
+        schemaName: WyvernSchemaName.ERC1155
     })
     console.log(`Successfully made ${fixedSellOrders.length} fixed-price sell orders! ${fixedSellOrders[0].asset.openseaLink}\n`)
-
+/*
     // Example: many fixed price auctions for multiple factory options.
     console.log("Creating fixed price auctions...")
     const fixedSellOrders = await seaport.createFactorySellOrders({
@@ -87,6 +89,7 @@ async function main() {
         numberOfOrders: NUM_DUTCH_AUCTIONS
     })
     console.log(`Successfully made ${dutchSellOrders.length} Dutch-auction sell orders! ${dutchSellOrders[0].asset.openseaLink}\n`)
+*/
 }
 
 main()

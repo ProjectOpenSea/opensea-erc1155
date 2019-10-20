@@ -1,4 +1,5 @@
 const opensea = require('opensea-js')
+const { WyvernSchemaName } = require("opensea-js/lib/types")
 const OpenSeaPort = opensea.OpenSeaPort;
 const Network = opensea.Network;
 const MnemonicWalletSubprovider = require('@0x/subproviders').MnemonicWalletSubprovider
@@ -49,7 +50,8 @@ async function main() {
         tokenAddress: NFT_CONTRACT_ADDRESS,
         startAmount: .05,
         expirationTime: 0,
-        accountAddress: OWNER_ADDRESS
+        accountAddress: OWNER_ADDRESS,
+        schemaName: WyvernSchemaName.ERC1155,
     })    
     console.log(`Successfully created a fixed-price sell order! ${fixedPriceSellOrder.asset.openseaLink}\n`)
 
@@ -66,19 +68,20 @@ async function main() {
     })
     console.log(`Successfully created a dutch auction sell order! ${dutchAuctionSellOrder.asset.openseaLink}\n`)
 
-    // Example: English auction.
-    console.log("English auctioning an item in DAI...")
+    // Example: multiple item sale for ERC20 token
+    console.log("Selling multiple items for an ERC20 token (WETH)")
     const wethAddress = NETWORK == 'mainnet' ? '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' : "0xc778417e063141139fce010982780140aa0cd5ab"
     const englishAuctionSellOrder = await seaport.createSellOrder({
         tokenId: "3",
         tokenAddress: NFT_CONTRACT_ADDRESS,
         startAmount: .03,
+        quantity: 2,
         expirationTime: expirationTime,
-        waitForHighestBid: true,
         paymentTokenAddress: wethAddress,
-        accountAddress: OWNER_ADDRESS
+        accountAddress: OWNER_ADDRESS,
+        schemaName: WyvernSchemaName.ERC1155,
     })
-    console.log(`Successfully created an English auction sell order! ${englishAuctionSellOrder.asset.openseaLink}\n`)
+    console.log(`Successfully created bulk-item sell order! ${englishAuctionSellOrder.asset.openseaLink}\n`)
 
 }
 
