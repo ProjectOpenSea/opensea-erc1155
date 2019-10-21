@@ -13,15 +13,9 @@ const OWNER_ADDRESS = process.env.OWNER_ADDRESS
 const NETWORK = process.env.NETWORK
 const API_KEY = process.env.API_KEY || "" // API key is optional but useful if you're doing a high volume of requests.
 
-const DUTCH_AUCTION_OPTION_ID = "1";
-const DUTCH_AUCTION_START_AMOUNT = 100;
-const DUTCH_AUCTION_END_AMOUNT = 50;    
-const NUM_DUTCH_AUCTIONS = 3;
-
-const FIXED_PRICE_OPTION_ID = "0";
 const FIXED_PRICE_OPTION_IDS = ["0", "1", "2"];
-const NUM_FIXED_PRICE_AUCTIONS = 10;
-const FIXED_PRICE = .1;
+const FIXED_PRICES_ETH = [0.1, 0.2, 0.3];
+const NUM_FIXED_PRICE_AUCTIONS = [2034, 2103, 2202];
 
 if (!MNEMONIC || !INFURA_KEY || !NETWORK || !OWNER_ADDRESS) {
     console.error("Please set a mnemonic, infura key, owner, network, API key, nft contract, and factory contract address.")
@@ -52,16 +46,19 @@ const seaport = new OpenSeaPort(providerEngine, {
 
 async function main() {
     // Example: many fixed price auctions for a factory option.
-    console.log("Creating fixed price auctions...")
-    const fixedSellOrders = await seaport.createFactorySellOrders({
-        assetId: FIXED_PRICE_OPTION_ID,
-        factoryAddress: FACTORY_CONTRACT_ADDRESS,
-        accountAddress: OWNER_ADDRESS,
-        startAmount: FIXED_PRICE,
-        numberOfOrders: NUM_FIXED_PRICE_AUCTIONS,
-        schemaName: WyvernSchemaName.ERC1155
-    })
-    console.log(`Successfully made ${fixedSellOrders.length} fixed-price sell orders! ${fixedSellOrders[0].asset.openseaLink}\n`)
+    for (let i = 0; i < FIXED_PRICE_OPTION_IDS.length; i++) {
+        const optionId = FIXED_PRICE_OPTION_IDS[i];
+        console.log(`Creating fixed price auctions for ${optionId}...`)
+        const fixedSellOrders = await seaport.createFactorySellOrders({
+            assetId: optionId,
+            factoryAddress: FACTORY_CONTRACT_ADDRESS,
+            accountAddress: OWNER_ADDRESS,
+            startAmount: FIXED_PRICES_ETH[i],
+            numberOfOrders: NUM_FIXED_PRICE_AUCTIONS[i],
+            schemaName: WyvernSchemaName.ERC1155
+        })
+        console.log(`Successfully made ${fixedSellOrders.length} fixed-price sell orders! ${fixedSellOrders[0].asset.openseaLink}\n`)
+    }
 /*
     // Example: many fixed price auctions for multiple factory options.
     console.log("Creating fixed price auctions...")
