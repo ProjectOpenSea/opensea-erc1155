@@ -214,7 +214,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   ) internal returns (uint256) {
     uint256 classId = uint256(_class);
     MyCollectible nftContract = MyCollectible(nftAddress);
-    uint256 tokenId = _pickRandomTokenIdForClass(_class);
+    uint256 tokenId = _pickRandomAvailableTokenIdForClass(_class, _amount);
     if (classIsPreminted[classId]) {
       nftContract.safeTransferFrom(
         owner(),
@@ -249,15 +249,35 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     return Class.Common;
   }
 
-  function _pickRandomTokenIdForClass(
-    Class _class
+  function _pickRandomAvailableTokenIdForClass(
+    Class _class,
+    uint256 _minAmount
   ) internal returns (uint256) {
-    uint256[] memory tokenIds = classToTokenIds[uint256(_class)];
+    uint256 classId = uint256(_class);
+    uint256[] memory tokenIds = classToTokenIds[classId];
     if (tokenIds.length == 0) {
+      // Unminted
+      require(
+        !classIsPreminted[classId],
+        "MyLootBox#_pickRandomAvailableTokenIdForClass: NO_TOKEN_ON_PREMINTED_CLASS"
+      );
       return 0;
     }
-    uint256 index = _random().mod(tokenIds.length);
-    return tokenIds[index];
+    if (classIsPreminted[classId]) {
+      // Make sure owner() owns enough
+      MyCollectible nftContract = MyCollectible(nftAddress);
+      for (uint256 i = 0; i < tokenIds.length; i++) {
+        uint256 tokenId = tokenIds[i];
+        if (nftContract.balanceOf(owner(), tokenId) >= _minAmount) {
+          return tokenId;
+        }
+      }
+      revert("MyLootBox#_pickRandomAvailableTokenIdForClass: NOT_ENOUGH_TOKENS_FOR_CLASS");
+    } else {
+      // For newly minted tokens, randomly pick one that we've done
+      uint256 index = _random().mod(tokenIds.length);
+      return tokenIds[index];
+    }
   }
 
   /**
