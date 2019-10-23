@@ -15,7 +15,7 @@ const API_KEY = process.env.API_KEY || "" // API key is optional but useful if y
 
 const FIXED_PRICE_OPTION_IDS = ["0", "1", "2"];
 const FIXED_PRICES_ETH = [0.1, 0.2, 0.3];
-const NUM_FIXED_PRICE_AUCTIONS = [2034, 2103, 2202];
+const NUM_FIXED_PRICE_AUCTIONS = [1000, 1000, 1000]; // [2034, 2103, 2202];
 
 if (!MNEMONIC || !INFURA_KEY || !NETWORK || !OWNER_ADDRESS) {
     console.error("Please set a mnemonic, infura key, owner, network, API key, nft contract, and factory contract address.")
@@ -52,6 +52,7 @@ async function main() {
         const fixedSellOrders = await seaport.createFactorySellOrders({
             assetId: optionId,
             factoryAddress: FACTORY_CONTRACT_ADDRESS,
+            quantity: 1,
             accountAddress: OWNER_ADDRESS,
             startAmount: FIXED_PRICES_ETH[i],
             numberOfOrders: NUM_FIXED_PRICE_AUCTIONS[i],
