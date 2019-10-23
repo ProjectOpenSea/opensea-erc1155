@@ -77,9 +77,22 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   function setClassForTokenId(
     uint256 _tokenId,
     uint256 _classId
-  ) external onlyOwner {
+  ) public onlyOwner {
     _checkTokenApproval();
     _addTokenIdToClass(Class(_classId), _tokenId);
+  }
+
+  /**
+   * @dev Alternate way to add token ids to a class
+   * Note: resets the full list for the class instead of adding each token id
+   */
+  function setTokenIdsForClass(
+    Class _class,
+    uint256[] memory _tokenIds
+  ) public onlyOwner {
+    uint256 classId = uint256(_class);
+    classIsPreminted[classId] = true;
+    classToTokenIds[classId] = _tokenIds;
   }
 
   /**
@@ -88,7 +101,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
    */
   function resetClass(
     uint256 _classId
-  ) external onlyOwner {
+  ) public onlyOwner {
     delete classIsPreminted[_classId];
     delete classToTokenIds[_classId];
   }
@@ -98,8 +111,8 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
    * @param _tokenIds List of token IDs to set for each class, specified above in order
    */
   function setTokenIdsForClasses(
-    uint256[NUM_CLASSES] calldata _tokenIds
-  ) external onlyOwner {
+    uint256[NUM_CLASSES] memory _tokenIds
+  ) public onlyOwner {
     _checkTokenApproval();
     for (uint256 i = 0; i < _tokenIds.length; i++) {
       Class class = Class(i);
@@ -263,20 +276,21 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
       );
       return 0;
     }
+
+    uint256 randIndex = _random().mod(tokenIds.length);
+
     if (classIsPreminted[classId]) {
       // Make sure owner() owns enough
       MyCollectible nftContract = MyCollectible(nftAddress);
-      for (uint256 i = 0; i < tokenIds.length; i++) {
-        uint256 tokenId = tokenIds[i];
+      for (uint256 i = randIndex; i < randIndex + tokenIds.length; i++) {
+        uint256 tokenId = tokenIds[i % tokenIds.length];
         if (nftContract.balanceOf(owner(), tokenId) >= _minAmount) {
           return tokenId;
         }
       }
       revert("MyLootBox#_pickRandomAvailableTokenIdForClass: NOT_ENOUGH_TOKENS_FOR_CLASS");
     } else {
-      // For newly minted tokens, randomly pick one that we've done
-      uint256 index = _random().mod(tokenIds.length);
-      return tokenIds[index];
+      return tokenIds[randIndex];
     }
   }
 
