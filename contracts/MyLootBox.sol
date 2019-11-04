@@ -18,24 +18,19 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   event LootBoxOpened(uint256 indexed optionId, address indexed buyer, uint256 boxesPurchased, uint256 itemsMinted);
   event Warning(string message, address account);
 
-  // Must be sorted by rarity
   enum Class {
-    Common,
-    Rare,
-    Epic,
-    Legendary,
-    Divine,
-    Hidden
+    Gold,
+    Neon,
+    Nom
   }
-  uint256 constant NUM_CLASSES = 6;
+  uint256 constant NUM_CLASSES = 3;
 
   // NOTE: Price of the lootbox is set via sell orders on OpenSea
   struct OptionSettings {
     // Number of items to send per open.
     // Set to 0 to disable this Option.
     uint256 quantityPerOpen;
-    // Probability in basis points (out of 10,000) of receiving each class (descending)
-    uint16[NUM_CLASSES] classProbabilities;
+    uint8[NUM_CLASSES] classEnabled;
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
   mapping (uint256 => uint256[]) public classToTokenIds;
@@ -61,9 +56,8 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   ) public {
     // Example settings and probabilities
     // you can also call these after deploying
-    setOptionSettings(Option.Basic, 3, [7300, 2100, 400, 100, 50, 50]);
-    setOptionSettings(Option.Premium, 5, [7200, 2100, 400, 200, 50, 50]);
-    setOptionSettings(Option.Gold, 7, [7000, 2100, 400, 400, 50, 50]);
+    setOptionSettings(Option.Basic, 2, [1, 0, 1]);
+    setOptionSettings(Option.Premium, 3, [1, 1, 1]);
   }
 
   //////
@@ -125,19 +119,17 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
    * @param _option The Option to set settings for
    * @param _quantityPerOpen The number of items to mint per open.
    *                         Set to 0 to disable this option.
-   * @param _classProbabilities Array of probabilities (basis points, so integers out of 10,000)
-   *                            of receiving each class. Should add up to 10k and be descending
-   *                            in value.
+   * @param _classEnabled Array of enabled markers, 1 if enabled else 0
    */
   function setOptionSettings(
     Option _option,
     uint256 _quantityPerOpen,
-    uint16[NUM_CLASSES] memory _classProbabilities
+    uint8[NUM_CLASSES] memory _classEnabled
   ) public onlyOwner {
 
     OptionSettings memory settings = OptionSettings({
       quantityPerOpen: _quantityPerOpen,
-      classProbabilities: _classProbabilities
+      classEnabled: _classEnabled
     });
 
     optionToSettings[uint256(_option)] = settings;
@@ -180,9 +172,11 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     // Iterate over the quantity of boxes specified
     for (uint256 i = 0; i < _amount; i++) {
       // Iterate over the box's set quantity
-      for (uint256 j = 0; j < settings.quantityPerOpen; j++) {
-        Class class = _pickRandomClass(settings.classProbabilities);
-        _sendTokenWithClass(class, _toAddress, 1);
+      for (uint256 j = 0; j < NUM_CLASSES; j++) {
+        uint8 enabled = settings.classEnabled[j];
+        if (enabled > 0) {
+          _sendTokenWithClass(Class(j), _toAddress, 1);
+        }
       }
     }
 
@@ -227,7 +221,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   ) internal returns (uint256) {
     uint256 classId = uint256(_class);
     MyCollectible nftContract = MyCollectible(nftAddress);
-    uint256 tokenId = _pickRandomAvailableTokenIdForClass(_class, _amount);
+    uint256 tokenId = _pickNextTokenIdForClass(_class, _amount);
     if (classIsPreminted[classId]) {
       nftContract.safeTransferFrom(
         owner(),
@@ -245,24 +239,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     return tokenId;
   }
 
-  function _pickRandomClass(
-    uint16[NUM_CLASSES] memory _classProbabilities
-  ) internal returns (Class) {
-    uint16 value = uint16(_random().mod(INVERSE_BASIS_POINT));
-    // Start at top class (length - 1)
-    // skip common (0), we default to it
-    for (uint256 i = _classProbabilities.length - 1; i > 0; i--) {
-      uint16 probability = _classProbabilities[i];
-      if (value < probability) {
-        return Class(i);
-      } else {
-        value = value - probability;
-      }
-    }
-    return Class.Common;
-  }
-
-  function _pickRandomAvailableTokenIdForClass(
+  function _pickNextTokenIdForClass(
     Class _class,
     uint256 _minAmount
   ) internal returns (uint256) {
@@ -272,25 +249,25 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
       // Unminted
       require(
         !classIsPreminted[classId],
-        "MyLootBox#_pickRandomAvailableTokenIdForClass: NO_TOKEN_ON_PREMINTED_CLASS"
+        "MyLootBox#_pickNextTokenIdForClass: NO_TOKEN_ON_PREMINTED_CLASS"
       );
       return 0;
     }
 
-    uint256 randIndex = _random().mod(tokenIds.length);
+    uint256 nextIndex = _nextNonce().mod(tokenIds.length);
 
     if (classIsPreminted[classId]) {
       // Make sure owner() owns enough
       MyCollectible nftContract = MyCollectible(nftAddress);
-      for (uint256 i = randIndex; i < randIndex + tokenIds.length; i++) {
+      for (uint256 i = nextIndex; i < nextIndex + tokenIds.length; i++) {
         uint256 tokenId = tokenIds[i % tokenIds.length];
         if (nftContract.balanceOf(owner(), tokenId) >= _minAmount) {
           return tokenId;
         }
       }
-      revert("MyLootBox#_pickRandomAvailableTokenIdForClass: NOT_ENOUGH_TOKENS_FOR_CLASS");
+      revert("MyLootBox#_pickNextTokenIdForClass: NOT_ENOUGH_TOKENS_FOR_CLASS");
     } else {
-      return tokenIds[randIndex];
+      return tokenIds[nextIndex];
     }
   }
 
@@ -302,6 +279,14 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 randomNumber = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, nonce)));
     nonce++;
     return randomNumber;
+  }
+
+  /**
+   * @dev Sequential number generator
+   */
+  function _nextNonce() internal returns (uint256) {
+    nonce++;
+    return nonce;
   }
 
   /**

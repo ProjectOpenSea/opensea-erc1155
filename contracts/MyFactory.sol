@@ -26,10 +26,9 @@ contract MyFactory is IFactory, Ownable {
    */
   enum Option {
     Basic,
-    Premium,
-    Gold
+    Premium
   }
-  uint256 constant NUM_OPTIONS = 3;
+  uint256 constant NUM_OPTIONS = 2;
   mapping (uint256 => uint256) public optionToTokenID;
 
   constructor(address _proxyRegistryAddress, address _nftAddress) public {
