@@ -49,7 +49,7 @@ async function main() {
     for (let i = 0; i < FIXED_PRICE_OPTION_IDS.length; i++) {
         const optionId = FIXED_PRICE_OPTION_IDS[i];
         console.log(`Creating fixed price auctions for ${optionId}...`)
-        const fixedSellOrders = await seaport.createFactorySellOrders({
+        const numOrders = await seaport.createFactorySellOrders({
             assetId: optionId,
             factoryAddress: FACTORY_CONTRACT_ADDRESS,
             quantity: 1,
@@ -58,7 +58,7 @@ async function main() {
             numberOfOrders: NUM_FIXED_PRICE_AUCTIONS[i],
             schemaName: WyvernSchemaName.ERC1155
         })
-        console.log(`Successfully made ${fixedSellOrders.length} fixed-price sell orders! ${fixedSellOrders[0].asset.openseaLink}\n`)
+        console.log(`Successfully made ${numOrders} fixed-price sell orders!\n`)
     }
 /*
     // Example: many fixed price auctions for multiple factory options.
@@ -90,4 +90,4 @@ async function main() {
 */
 }
 
-main()
+main().catch(e => console.error(e))
