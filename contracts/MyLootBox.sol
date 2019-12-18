@@ -40,7 +40,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   mapping (uint256 => OptionSettings) public optionToSettings;
   mapping (uint256 => uint256[]) public classToTokenIds;
   mapping (uint256 => bool) public classIsPreminted;
-  uint256 nonce = 0;
+  uint256 seed;
   uint256 constant INVERSE_BASIS_POINT = 10000;
 
   /**
@@ -141,6 +141,15 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     });
 
     optionToSettings[uint256(_option)] = settings;
+  }
+
+  /**
+   * @dev Improve pseudorandom number generator by letting the owner set the seed manually,
+   * making attacks more difficult
+   * @param _newSeed The new seed to use for the next transaction
+   */
+  function setSeed(uint256 _newSeed) public onlyOwner {
+    seed = _newSeed;
   }
 
   ///////
@@ -299,8 +308,8 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
    * NOTE: to improve randomness, generate it with an oracle
    */
   function _random() internal returns (uint256) {
-    uint256 randomNumber = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, nonce)));
-    nonce++;
+    uint256 randomNumber = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, seed)));
+    seed = randomNumber;
     return randomNumber;
   }
 
