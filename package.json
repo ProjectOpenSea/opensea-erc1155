@@ -22,13 +22,12 @@
     "multi-token-standard": "github:ProjectOpenSea/multi-token-standard",
     "opensea-js": "latest",
     "openzeppelin-solidity": "^2.1.3",
-    "truffle": "5.0.37",
+    "truffle": "^5.1.12",
     "truffle-flattener": "1.4.2",
     "truffle-hdwallet-provider": "1.0.17",
     "web3": "1.0.0-beta.34"
   },
-  "engines": {
-    "node": "8.11.x",
-    "npm": "5.6.x"
+  "devDependencies": {
+    "eth-gas-reporter": "^0.2.14"
   }
 }
