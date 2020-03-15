@@ -155,6 +155,23 @@ contract ERC1155Tradable is ERC1155, ERC1155MintBurn, ERC1155Metadata, Ownable {
   }
 
   /**
+    * @dev Change the creator address for given tokens
+    * @param _to   Address of the new creator
+    * @param _ids  Array of Token IDs to change creator
+    */
+  function setCreator(
+    address _to,
+    uint256[] memory _ids
+  ) public {
+    require(_to != address(0), "ERC1155Tradable#setCreator: INVALID_ADDRESS.");
+    for (uint256 i = 0; i < _ids.length; i++) {
+      uint256 id = _ids[i];
+      require(creators[id] == msg.sender, "ERC1155Tradable#setCreator: ONLY_CREATOR_ALLOWED");
+      creators[id] = _to;
+    }
+  }
+
+  /**
    * Override isApprovedForAll to whitelist user's OpenSea proxy accounts to enable gas-free listings.
    */
   function isApprovedForAll(

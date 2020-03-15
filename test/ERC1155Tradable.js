@@ -12,7 +12,8 @@ contract("ERC1155Tradable - ERC 1155", (accounts) => {
 		owner = accounts[0],
 		creator = accounts[1],
 		userA = accounts[2],
-		userB = accounts[3];
+		userB = accounts[3],
+		zeroAddress = '0x0000000000000000000000000000000000000000';
 
 	var name = 'ERC-1155 Test Contract',
 		symbol = 'ERC1155Test';
@@ -59,11 +60,42 @@ contract("ERC1155Tradable - ERC 1155", (accounts) => {
 		it('Non-owner can not create tokens',
 			() => expectThrow(instance.create(userA, 0, "", "0x0", {from: userA}))
 		);
+
+		it('Owner can change token creator to another address',
+			() => instance.setCreator(creator, [initialTokenId], {from: owner})
+			.then(() => instance.creators(initialTokenId))
+			.then((_creator) => {
+				assert.equal(creator, _creator);
+			})
+		);
+
+		it('Can not set creator to 0x0 address',
+			() => expectThrow(instance.setCreator(zeroAddress, [initialTokenId], {from: creator}))
+		);
+
+		it('Non-creator can not set creator',
+			// Check both a user and the owner of the contract
+			() => expectThrow(instance.setCreator(userA, [initialTokenId], {from: userA}))
+			.then(expectThrow(instance.setCreator(owner, [initialTokenId], {from: owner})))
+		);
+
+		it('Creator can change token creator to another address',
+			() => instance.setCreator(userA, [initialTokenId], {from: creator})
+			.then(() => instance.creators(initialTokenId))
+			.then((_creator) => {
+				assert.equal(userA, _creator);
+				return instance.setCreator(creator, [initialTokenId], {from: userA})
+			})
+			.then(() => instance.creators(initialTokenId))
+			.then((_creator) => {
+				assert.equal(creator, _creator);
+			})
+		);
 	});
 
 	describe('Minting', () => {
 		it('Mint some tokens, get correct totalSupply back',
-			() => instance.mint(userA, initialTokenId, mintAmount, "0x0", {from: owner})
+			() => instance.mint(userA, initialTokenId, mintAmount, "0x0", {from: creator})
 			.then(() => {
 				return instance.totalSupply(initialTokenId);
 			})
@@ -75,7 +107,7 @@ contract("ERC1155Tradable - ERC 1155", (accounts) => {
 
 		it('Minting should not overflow',
 			() => expectThrow(
-				instance.mint(userB, initialTokenId, overflowNumber, "0x0", {from: owner}),
+				instance.mint(userB, initialTokenId, overflowNumber, "0x0", {from: creator}),
 				'OVERFLOW'
 			)
 		);
@@ -83,7 +115,7 @@ contract("ERC1155Tradable - ERC 1155", (accounts) => {
 
 	describe('Batch Minting', () => {
 		it('Batch mint some tokens, get correct totalSupply back',
-			() => instance.batchMint(userA, [initialTokenId], [mintAmount], "0x0", {from: owner})
+			() => instance.batchMint(userA, [initialTokenId], [mintAmount], "0x0", {from: creator})
 			.then(() => {
 				return instance.totalSupply(initialTokenId);
 			})
@@ -95,7 +127,7 @@ contract("ERC1155Tradable - ERC 1155", (accounts) => {
 
 		it('Batch minting should not overflow',
 			() => expectThrow(
-				instance.mint(userB, initialTokenId, overflowNumber, "0x0", {from: owner}),
+				instance.mint(userB, initialTokenId, overflowNumber, "0x0", {from: creator}),
 				'OVERFLOW'
 			)
 		);
