@@ -129,7 +129,7 @@ contract ERC1155Tradable is ERC1155, ERC1155MintBurn, ERC1155Metadata, Ownable {
     bytes memory _data
   ) public creatorOnly(_id) {
     _mint(_to, _id, _quantity, _data);
-    tokenSupply[_id] += _quantity;
+    tokenSupply[_id] = tokenSupply[_id].add(_quantity);
   }
 
   /**
@@ -149,7 +149,7 @@ contract ERC1155Tradable is ERC1155, ERC1155MintBurn, ERC1155Metadata, Ownable {
       uint256 _id = _ids[i];
       require(creators[_id] == msg.sender, "ERC1155Tradable#batchMint: ONLY_CREATOR_ALLOWED");
       uint256 quantity = _quantities[i];
-      tokenSupply[_id] += quantity;
+      tokenSupply[_id] = tokenSupply[_id].add(quantity);
     }
     _batchMint(_to, _ids, _quantities, _data);
   }
