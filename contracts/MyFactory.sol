@@ -1,12 +1,13 @@
 pragma solidity ^0.5.11;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "./IFactory.sol";
 import "./MyCollectible.sol";
 import "./Strings.sol";
 
 // WIP
-contract MyFactory is IFactory, Ownable {
+contract MyFactory is IFactory, Ownable, ReentrancyGuard {
   using Strings for string;
   using SafeMath for uint256;
 
@@ -65,7 +66,7 @@ contract MyFactory is IFactory, Ownable {
     return _canMint(msg.sender, Option(_optionId), _amount);
   }
 
-  function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes calldata _data) external {
+  function mint(uint256 _optionId, address _toAddress, uint256 _amount, bytes calldata _data) external nonReentrant() {
     return _mint(Option(_optionId), _toAddress, _amount, _data);
   }
 
