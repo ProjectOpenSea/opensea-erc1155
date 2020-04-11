@@ -228,12 +228,12 @@ contract("ERC1155Tradable - ERC 1155", (accounts) => {
          await truffleAssert.fails(
            instance.setCreator(userA, [INITIAL_TOKEN_ID], {from: userA}),
            truffleAssert.ErrorType.revert,
-           'ERC1155Tradable#setCreator: ONLY_CREATOR_ALLOWED'
+           'ERC1155Tradable#creatorOnly: ONLY_CREATOR_ALLOWED'
          );
          await truffleAssert.fails(
            instance.setCreator(owner, [INITIAL_TOKEN_ID], {from: owner}),
            truffleAssert.ErrorType.revert,
-           'ERC1155Tradable#setCreator: ONLY_CREATOR_ALLOWED'
+           'ERC1155Tradable#creatorOnly: ONLY_CREATOR_ALLOWED'
          );
        });
   });
