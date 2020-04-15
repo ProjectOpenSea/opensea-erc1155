@@ -2,7 +2,7 @@ pragma solidity ^0.5.11;
 
 import "multi-token-standard/contracts/interfaces/IERC1155TokenReceiver.sol";
 
-import "./MyFactory.sol";
+import "../MyFactory.sol";
 
 
 contract TestForReentrancyAttack is IERC1155TokenReceiver {
