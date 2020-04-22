@@ -65,9 +65,10 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   ) public {
     // Example settings and probabilities
     // you can also call these after deploying
-    setOptionSettings(Option.Basic, 3, [7300, 2100, 400, 100, 50, 50]);
-    setOptionSettings(Option.Premium, 5, [7200, 2100, 400, 200, 50, 50]);
-    setOptionSettings(Option.Gold, 7, [7000, 2100, 400, 400, 50, 50]);
+    uint16[NUM_CLASSES] memory guarantees;
+    setOptionSettings(Option.Basic, 3, [7300, 2100, 400, 100, 50, 50], guarantees);
+    setOptionSettings(Option.Premium, 5, [7200, 2100, 400, 200, 50, 50], guarantees);
+    setOptionSettings(Option.Gold, 7, [7000, 2100, 400, 400, 50, 50], guarantees);
   }
 
   //////
@@ -140,7 +141,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint16[NUM_CLASSES] memory _guarantees
   ) public onlyOwner {
 
-    bool hasGaranteedClasses = false;
+    bool hasGuaranteedClasses = false;
     for (uint256 i = 0; i < _guarantees.length; i++) {
       if (_guarantees[i] > 0) {
         hasGuaranteedClasses = true;
@@ -150,7 +151,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     OptionSettings memory settings = OptionSettings({
       maxQuantityPerOpen: _maxQuantityPerOpen,
       classProbabilities: _classProbabilities,
-      hasGaranteedClasses: hasGaranteedClasses,
+      hasGuaranteedClasses: hasGuaranteedClasses,
       guarantees: _guarantees
     });
 
@@ -211,7 +212,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
         for (uint256 classId = 0; classId < settings.guarantees.length; classId++) {
           if (classId > 0) {
             uint256 quantityOfGaranteed = settings.guarantees[classId];
-            _sendTokenWithClass(classId, _toAddress, quantity);
+            _sendTokenWithClass(Class(classId), _toAddress, quantityOfGaranteed);
             quantitySent += quantityOfGaranteed;
           }
         }
