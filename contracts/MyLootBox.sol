@@ -33,9 +33,13 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   struct OptionSettings {
     // Number of items to send per open.
     // Set to 0 to disable this Option.
-    uint256 quantityPerOpen;
+    uint256 maxQuantityPerOpen;
     // Probability in basis points (out of 10,000) of receiving each class (descending)
     uint16[NUM_CLASSES] classProbabilities;
+    // Whether to enable `guarantees` below
+    bool hasGuaranteedClasses;
+    // Number of items you're guaranteed to get, for each class
+    uint16[NUM_CLASSES] guarantees;
   }
   mapping (uint256 => OptionSettings) public optionToSettings;
   mapping (uint256 => uint256[]) public classToTokenIds;
@@ -123,21 +127,31 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
   /**
    * @dev Set the settings for a particular lootbox option
    * @param _option The Option to set settings for
-   * @param _quantityPerOpen The number of items to mint per open.
-   *                         Set to 0 to disable this option.
+   * @param _maxQuantityPerOpen Maximum number of items to mint per open.
+   *                            Set to 0 to disable this option.
    * @param _classProbabilities Array of probabilities (basis points, so integers out of 10,000)
    *                            of receiving each class. Should add up to 10k and be descending
    *                            in value.
    */
   function setOptionSettings(
     Option _option,
-    uint256 _quantityPerOpen,
-    uint16[NUM_CLASSES] memory _classProbabilities
+    uint256 _maxQuantityPerOpen,
+    uint16[NUM_CLASSES] memory _classProbabilities,
+    uint16[NUM_CLASSES] memory _guarantees
   ) public onlyOwner {
 
+    bool hasGaranteedClasses = false;
+    for (uint256 i = 0; i < _guarantees.length; i++) {
+      if (_guarantees[i] > 0) {
+        hasGuaranteedClasses = true;
+      }
+    }
+
     OptionSettings memory settings = OptionSettings({
-      quantityPerOpen: _quantityPerOpen,
-      classProbabilities: _classProbabilities
+      maxQuantityPerOpen: _maxQuantityPerOpen,
+      classProbabilities: _classProbabilities,
+      hasGaranteedClasses: hasGaranteedClasses,
+      guarantees: _guarantees
     });
 
     optionToSettings[uint256(_option)] = settings;
@@ -183,20 +197,38 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 optionId = uint256(_option);
     OptionSettings memory settings = optionToSettings[optionId];
 
-    require(settings.quantityPerOpen > 0, "MyLootBox#_mint: OPTION_NOT_ALLOWED");
+    require(settings.maxQuantityPerOpen > 0, "MyLootBox#_mint: OPTION_NOT_ALLOWED");
     require(_canMint(msg.sender, _option, _amount), "MyLootBox#_mint: CANNOT_MINT");
+
+    uint256 totalMinted = 0;
 
     // Iterate over the quantity of boxes specified
     for (uint256 i = 0; i < _amount; i++) {
       // Iterate over the box's set quantity
-      for (uint256 j = 0; j < settings.quantityPerOpen; j++) {
-        Class class = _pickRandomClass(settings.classProbabilities);
-        _sendTokenWithClass(class, _toAddress, 1);
+      uint256 quantitySent = 0;
+      if (settings.hasGuaranteedClasses) {
+        // Process guaranteed token ids
+        for (uint256 classId = 0; classId < settings.guarantees.length; classId++) {
+          if (classId > 0) {
+            uint256 quantityOfGaranteed = settings.guarantees[classId];
+            _sendTokenWithClass(classId, _toAddress, quantity);
+            quantitySent += quantityOfGaranteed;
+          }
+        }
       }
+
+      // Process non-guaranteed ids
+      while (quantitySent < settings.maxQuantityPerOpen) {
+        uint256 quantityOfRandomized = 1;
+        Class class = _pickRandomClass(settings.classProbabilities);
+        _sendTokenWithClass(class, _toAddress, quantityOfRandomized);
+        quantitySent += quantityOfRandomized;
+      }
+
+      totalMinted += quantitySent;
     }
 
     // Event emissions
-    uint256 totalMinted = _amount.mul(settings.quantityPerOpen);
     emit LootBoxOpened(optionId, _toAddress, _amount, totalMinted);
   }
 
