@@ -131,8 +131,10 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
    * @param _maxQuantityPerOpen Maximum number of items to mint per open.
    *                            Set to 0 to disable this option.
    * @param _classProbabilities Array of probabilities (basis points, so integers out of 10,000)
-   *                            of receiving each class. Should add up to 10k and be descending
-   *                            in value.
+   *                            of receiving each class (the index in the array).
+   *                            Should add up to 10k and be descending in value.
+   * @param _guarantees         Array of the number of guaranteed items received for each class
+   *                            (the index in the array).
    */
   function setOptionSettings(
     Option _option,
@@ -141,6 +143,8 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint16[NUM_CLASSES] memory _guarantees
   ) public onlyOwner {
 
+    // Allow us to skip guarantees and save gas at mint time
+    // if there are no classes with guarantees
     bool hasGuaranteedClasses = false;
     for (uint256 i = 0; i < _guarantees.length; i++) {
       if (_guarantees[i] > 0) {
