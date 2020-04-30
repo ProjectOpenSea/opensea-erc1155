@@ -67,7 +67,11 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     // you can also call these after deploying
     uint16[NUM_CLASSES] memory guarantees;
     setOptionSettings(Option.Basic, 3, [7300, 2100, 400, 100, 50, 50], guarantees);
+    // Note that tokens ids will be one higher than the indexes used here.
+    guarantees[0] = 3;
     setOptionSettings(Option.Premium, 5, [7200, 2100, 400, 200, 50, 50], guarantees);
+    guarantees[2] = 2;
+    guarantees[4] = 1;
     setOptionSettings(Option.Gold, 7, [7000, 2100, 400, 400, 50, 50], guarantees);
   }
 

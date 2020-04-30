@@ -125,7 +125,7 @@ contract MyFactory is IFactory, Ownable, ReentrancyGuard {
 
   /**
    * Hack to get things to work automatically on OpenSea.
-   * Use safeTransferFrom so the frontend doesn't have to worry about different method names.
+   * Use safTeransferFrom so the frontend doesn't have to worry about different method names.
    */
   function safeTransferFrom(
     address /* _from */,
