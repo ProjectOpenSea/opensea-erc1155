@@ -1632,7 +1632,7 @@ bignumber.js@7.2.1:
   resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-7.2.1.tgz#80c048759d826800807c4bfd521e50edbba57a5f"
   integrity sha512-S4XzBk5sMB+Rcb/LNcpzXr57VRTxgAvaAEDAl1AwRx27j00hT84O6OkteE7u8UB3NuaaygCRrEpqox4uDOrbdQ==
 
-bignumber.js@^4.0.4, bignumber.js@~4.1.0:
+bignumber.js@^4.1.0, bignumber.js@~4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-4.1.0.tgz#db6f14067c140bd46624815a7916c92d9b6c24b1"
   integrity sha512-eJzYkFYy9L4JzXsbymsFn3p54D+llV27oTQ+ziJG7WFRheJcNZilgVXMG0LoZtlQSKBsJdWtLFqOD0u+U0jZKA==
@@ -3484,6 +3484,13 @@ ethereumjs-abi@^0.6.4, "ethereumjs-abi@git+https://github.com/ethereumjs/ethereu
     bn.js "^4.11.8"
     ethereumjs-util "^6.0.0"
 
+"ethereumjs-abi@git+https://github.com/ProjectWyvern/ethereumjs-abi.git":
+  version "0.6.6"
+  resolved "git+https://github.com/ProjectWyvern/ethereumjs-abi.git#3d2d89641a6ad5984929b6ca4b646452ec74f73d"
+  dependencies:
+    bn.js "^4.10.0"
+    ethereumjs-util "^4.3.0"
+
 "ethereumjs-abi@https://github.com/ProjectWyvern/ethereumjs-abi.git":
   version "0.6.6"
   resolved "https://github.com/ProjectWyvern/ethereumjs-abi.git#3d2d89641a6ad5984929b6ca4b646452ec74f73d"
@@ -3614,7 +3621,7 @@ ethereumjs-util@^4.0.1, ethereumjs-util@^4.3.0:
     rlp "^2.0.0"
     secp256k1 "^3.0.1"
 
-ethereumjs-util@^5.0.0, ethereumjs-util@^5.0.1, ethereumjs-util@^5.1.1, ethereumjs-util@^5.1.2, ethereumjs-util@^5.1.3, ethereumjs-util@^5.1.5:
+ethereumjs-util@^5.0.0, ethereumjs-util@^5.0.1, ethereumjs-util@^5.1.1, ethereumjs-util@^5.1.2, ethereumjs-util@^5.1.3, ethereumjs-util@^5.1.5, ethereumjs-util@^5.2.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/ethereumjs-util/-/ethereumjs-util-5.2.0.tgz#3e0c0d1741471acf1036052d048623dee54ad642"
   integrity sha512-CJAKdI0wgMbQFLlLRtZKGcy/L6pzVRgelIZqRqNbuVFM3K9VEnyfbcvz0ncWMRNCe4kaHWjwRYQcYMucmwsnWA==
@@ -6701,22 +6708,23 @@ once@^1.3.0, once@^1.3.1, once@^1.3.2, once@^1.4.0:
   dependencies:
     wrappy "1"
 
-opensea-js@latest:
-  version "0.7.1"
-  resolved "https://registry.yarnpkg.com/opensea-js/-/opensea-js-0.7.1.tgz#ff1baee67769987f1aeae50af50f378aea81626b"
-  integrity sha512-maxfZ6lN6rAuj9epbACVjH6c26rEJlNWOkWdAZlHJu6480+m118Uu4RobBIOU+6wOi9XTRzRgOtuqz7msWLrsg==
+opensea-js@^1.1.5:
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/opensea-js/-/opensea-js-1.1.5.tgz#af132ee97e42b77c6d3d691eda92c62efab16c54"
+  integrity sha512-t2i13wa9oPRAmit/vZqCm0kapGzs1F8ftuSLaS1tRirccWD/8ie3F1xVR4r0QxC5KQFYtZk9MQVmMTw3dlEsXQ==
   dependencies:
-    bignumber.js "^4.0.4"
-    ethereumjs-util "^5.1.3"
+    bignumber.js "^4.1.0"
+    ethereumjs-abi "git+https://github.com/ProjectWyvern/ethereumjs-abi.git"
+    ethereumjs-util "^5.2.0"
     fbemitter "^2.1.1"
     isomorphic-unfetch "^2.1.1"
     json-loader "^0.5.7"
     lodash "^4.17.4"
-    query-string "^6.1.0"
-    web3 "^0.20.6"
+    query-string "^6.11.1"
+    web3 "0.20.7"
     webpack "^3.10.0"
-    wyvern-js "github:ProjectOpenSea/wyvern-js#semver:^3.2.0"
-    wyvern-schemas "github:ProjectOpenSea/wyvern-schemas#semver:^0.10.7"
+    wyvern-js "git+https://github.com/ProjectOpenSea/wyvern-js.git#v3.2.1"
+    wyvern-schemas "git+https://github.com/ProjectOpenSea/wyvern-schemas.git#v0.11.1"
 
 openzeppelin-solidity@^2.1.3:
   version "2.5.0"
@@ -7368,10 +7376,10 @@ query-string@^5.0.1:
     object-assign "^4.1.0"
     strict-uri-encode "^1.0.0"
 
-query-string@^6.1.0:
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/query-string/-/query-string-6.10.1.tgz#30b3505f6fca741d5ae541964d1b3ae9dc2a0de8"
-  integrity sha512-SHTUV6gDlgMXg/AQUuLpTiBtW/etZ9JT6k6RCtCyqADquApLX0Aq5oK/s5UeTUAWBG50IExjIr587GqfXRfM4A==
+query-string@^6.11.1:
+  version "6.12.1"
+  resolved "https://registry.yarnpkg.com/query-string/-/query-string-6.12.1.tgz#2ae4d272db4fba267141665374e49a1de09e8a7c"
+  integrity sha512-OHj+zzfRMyj3rmo/6G8a5Ifvw3AleL/EbcHMD27YA31Q+cO5lfmQxECkImuNVjcskLcvBRVHNAB3w6udMs1eAA==
   dependencies:
     decode-uri-component "^0.2.0"
     split-on-first "^1.0.0"
@@ -10311,6 +10319,17 @@ web3@0.20.2:
     xhr2 "*"
     xmlhttprequest "*"
 
+web3@0.20.7, web3@^0.20.0, web3@^0.20.4:
+  version "0.20.7"
+  resolved "https://registry.yarnpkg.com/web3/-/web3-0.20.7.tgz#1605e6d81399ed6f85a471a4f3da0c8be57df2f7"
+  integrity sha512-VU6/DSUX93d1fCzBz7WP/SGCQizO1rKZi4Px9j/3yRyfssHyFcZamMw2/sj4E8TlfMXONvZLoforR8B4bRoyTQ==
+  dependencies:
+    bignumber.js "git+https://github.com/frozeman/bignumber.js-nolookahead.git"
+    crypto-js "^3.1.4"
+    utf8 "^2.1.1"
+    xhr2-cookies "^1.1.0"
+    xmlhttprequest "*"
+
 web3@1.0.0-beta.34:
   version "1.0.0-beta.34"
   resolved "https://registry.yarnpkg.com/web3/-/web3-1.0.0-beta.34.tgz#347e561b784098cb5563315f490479a1d91f2ab1"
@@ -10350,17 +10369,6 @@ web3@1.2.4:
     web3-net "1.2.4"
     web3-shh "1.2.4"
     web3-utils "1.2.4"
-
-web3@^0.20.0, web3@^0.20.4, web3@^0.20.6:
-  version "0.20.7"
-  resolved "https://registry.yarnpkg.com/web3/-/web3-0.20.7.tgz#1605e6d81399ed6f85a471a4f3da0c8be57df2f7"
-  integrity sha512-VU6/DSUX93d1fCzBz7WP/SGCQizO1rKZi4Px9j/3yRyfssHyFcZamMw2/sj4E8TlfMXONvZLoforR8B4bRoyTQ==
-  dependencies:
-    bignumber.js "git+https://github.com/frozeman/bignumber.js-nolookahead.git"
-    crypto-js "^3.1.4"
-    utf8 "^2.1.1"
-    xhr2-cookies "^1.1.0"
-    xmlhttprequest "*"
 
 webpack-sources@^1.0.1:
   version "1.4.3"
@@ -10543,9 +10551,9 @@ ws@^5.1.1:
   dependencies:
     async-limiter "~1.0.0"
 
-"wyvern-js@github:ProjectOpenSea/wyvern-js#semver:^3.2.0":
+"wyvern-js@git+https://github.com/ProjectOpenSea/wyvern-js.git#v3.2.1":
   version "3.2.0"
-  resolved "https://codeload.github.com/ProjectOpenSea/wyvern-js/tar.gz/28da7808b75d649c58d6abc4adb7c8d9ee5c2c57"
+  resolved "git+https://github.com/ProjectOpenSea/wyvern-js.git#fabb7660f23f2252c141077e32193d281036299e"
   dependencies:
     "0x.js" "^0.29.2"
     "@0xproject/abi-gen" "^0.1.1"
@@ -10573,16 +10581,47 @@ ws@^5.1.1:
     web3 "^0.20.4"
     webpack "^3.10.0"
 
-"wyvern-schemas@github:ProjectOpenSea/wyvern-schemas#semver:^0.10.7":
+"wyvern-js@github:ProjectOpenSea/wyvern-js#semver:^3.2.1":
+  version "3.2.0"
+  uid fabb7660f23f2252c141077e32193d281036299e
+  resolved "https://codeload.github.com/ProjectOpenSea/wyvern-js/tar.gz/fabb7660f23f2252c141077e32193d281036299e"
+  dependencies:
+    "0x.js" "^0.29.2"
+    "@0xproject/abi-gen" "^0.1.1"
+    "@0xproject/assert" "^0.0.11"
+    "@0xproject/json-schemas" "^0.7.3"
+    "@0xproject/types" "^0.1.3"
+    "@0xproject/utils" "^0.1.3"
+    "@0xproject/web3-wrapper" "^0.1.4"
+    "@types/lodash" "^4.14.92"
+    "@types/node" "^9.3.0"
+    awesome-typescript-loader "^3.4.1"
+    bn.js "^4.11.8"
+    ethereumjs-abi "https://github.com/ProjectWyvern/ethereumjs-abi.git"
+    ethereumjs-util "^5.1.3"
+    json-loader "^0.5.7"
+    jsonschema "^1.2.2"
+    lodash "^4.17.4"
+    ts-node "^6.1.0"
+    tslint "^5.9.1"
+    tslint-eslint-rules "^4.1.1"
+    types-bn "^0.0.1"
+    types-ethereumjs-util "^0.0.5"
+    typescript "^2.6.2"
+    typescript-eslint-parser "^16.0.0"
+    web3 "^0.20.4"
+    webpack "^3.10.0"
+
+"wyvern-schemas@git+https://github.com/ProjectOpenSea/wyvern-schemas.git#v0.11.1":
   version "0.10.7"
-  resolved "https://codeload.github.com/ProjectOpenSea/wyvern-schemas/tar.gz/cd0f4751540902c82cae875b3fc028e0c52a7184"
+  resolved "git+https://github.com/ProjectOpenSea/wyvern-schemas.git#e1a08fcf8ce2b11a0fe9cbdc7c9f77c59fadef26"
   dependencies:
     "@0xproject/utils" "^0.3.4"
     axios "^0.17.1"
     bignumber.js "^6.0.0"
     typed-promisify "^0.4.0"
     web3-provider-engine "^13.6.5"
-    wyvern-js "github:ProjectOpenSea/wyvern-js#semver:^3.2.0"
+    wyvern-js "github:ProjectOpenSea/wyvern-js#semver:^3.2.1"
 
 xdg-basedir@^3.0.0:
   version "3.0.0"

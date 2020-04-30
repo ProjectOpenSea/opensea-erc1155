@@ -50,13 +50,18 @@ async function main() {
         const optionId = FIXED_PRICE_OPTION_IDS[i];
         console.log(`Creating fixed price auctions for ${optionId}...`)
         const numOrders = await seaport.createFactorySellOrders({
-            assetId: optionId,
-            factoryAddress: FACTORY_CONTRACT_ADDRESS,
+            assets: [{
+                tokenId: optionId,
+                tokenAddress: FACTORY_CONTRACT_ADDRESS,
+                // Comment the next line if this is an ERC-721 asset (defaults to ERC721):
+                schemaName: WyvernSchemaName.ERC1155
+            }],
+            // Quantity of each asset to issue
             quantity: 1,
             accountAddress: OWNER_ADDRESS,
             startAmount: FIXED_PRICES_ETH[i],
-            numberOfOrders: NUM_FIXED_PRICE_AUCTIONS[i],
-            schemaName: WyvernSchemaName.ERC1155
+            // Number of times to repeat creating the same order for each asset. If greater than 5, creates them in batches of 5. Requires an `apiKey` to be set during seaport initialization:
+            numberOfOrders: NUM_FIXED_PRICE_AUCTIONS[i]
         })
         console.log(`Successfully made ${numOrders} fixed-price sell orders!\n`)
     }
