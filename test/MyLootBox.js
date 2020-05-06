@@ -2,6 +2,7 @@
 
 const truffleAssert = require('truffle-assertions');
 
+const vals = require('../lib/testValuesCommon.js');
 
 /* Contracts in this test */
 
@@ -19,11 +20,7 @@ const toBN = web3.utils.toBN;
 
 /* Utility Functions */
 
-// Not a function, the keccak of the TransferSingle event.
-
-const TRANSFER_SINGLE_SIG = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62';
-
-// Also not a function, the fields of the TransferSingle event.
+// Not a function, the fields of the TransferSingle event.
 
 const TRANSFER_SINGLE_FIELDS = [
   { type: 'address', name: '_operator', indexed: true },
@@ -32,6 +29,14 @@ const TRANSFER_SINGLE_FIELDS = [
   { type: 'uint256', name: '_id' },
   { type: 'uint256', name: '_amount' }
 ];
+
+// Not a function, the keccak of the TransferSingle event.
+
+const TRANSFER_SINGLE_SIG = web3.eth.abi.encodeEventSignature({
+  name: 'TransferSingle',
+  type: 'event',
+  inputs: TRANSFER_SINGLE_FIELDS
+});
 
 // Check the option settings to make sure the values in the smart contract
 // match the expected ones.
@@ -68,7 +73,7 @@ const totalEventTokens = (receipt, recipient) => {
       assert.equal(parsed._to, recipient);
       // Keep a running total for each token id.
       const id = parsed._id;
-      if(! totals[id]) {
+      if (! totals[id]) {
         totals[id] = toBN(0);
       }
       const amount = toBN(parsed._amount);
@@ -102,10 +107,6 @@ const compareTokenTotals = (totals, spec, option) => {
 /* Tests */
 
 contract("MyLootBox", (accounts) => {
-  const URI_BASE = 'https://opensea-creatures-api.herokuapp.com/api/';
-  const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
-  const MAX_UINT256 = '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF';
-  const MAX_UINT256_BN = toBN(MAX_UINT256);
   // As set in (or inferred from) the contract
   const BASIC = toBN(0);
   const PREMIUM = toBN(1);
@@ -162,7 +163,7 @@ contract("MyLootBox", (accounts) => {
       const option = BASIC;
       const amount = toBN(1);
       const receipt = await myLootBox.safeTransferFrom(
-        ADDRESS_ZERO,
+        vals.ADDRESS_ZERO,
         userB,
         option,
         amount,
@@ -187,7 +188,7 @@ contract("MyLootBox", (accounts) => {
       const option = BASIC;
       const amount = toBN(1);
       const receipt = await myLootBox.safeTransferFrom(
-          ADDRESS_ZERO,
+          vals.ADDRESS_ZERO,
           userB,
           option,
           amount,
@@ -212,7 +213,7 @@ contract("MyLootBox", (accounts) => {
       const amount = toBN(1);
       await truffleAssert.fails(
         myLootBox.safeTransferFrom(
-          ADDRESS_ZERO,
+          vals.ADDRESS_ZERO,
           userB,
           PREMIUM,
           amount,
@@ -228,7 +229,7 @@ contract("MyLootBox", (accounts) => {
       const amount = toBN(1);
       await truffleAssert.fails(
         myLootBox.safeTransferFrom(
-          ADDRESS_ZERO,
+          vals.ADDRESS_ZERO,
           userB,
           NO_SUCH_OPTION,
           amount,
@@ -245,7 +246,7 @@ contract("MyLootBox", (accounts) => {
         const option = OPTIONS[i];
         const amount = toBN(1);
         const receipt = await myLootBox.safeTransferFrom(
-          ADDRESS_ZERO,
+          vals.ADDRESS_ZERO,
           userB,
           option,
           amount,
