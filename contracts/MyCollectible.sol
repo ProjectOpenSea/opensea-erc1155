@@ -13,10 +13,10 @@ contract MyCollectible is ERC1155Tradable {
     "MCB",
     _proxyRegistryAddress
   ) public {
-    _setBaseMetadataURI("https://opensea-creatures-api.herokuapp.com/api/creature/");
+    _setBaseMetadataURI("https://creatures-api.opensea.io/api/creature/");
   }
 
   function contractURI() public view returns (string memory) {
-    return "https://opensea-creatures-api.herokuapp.com/contract/opensea-erc1155";
+    return "https://creatures-api.opensea.io/contract/opensea-erc1155";
   }
 }

@@ -4,7 +4,7 @@ const MyCollectible = artifacts.require("../contracts/MyCollectible.sol");
 
 
 contract("MyCollectible", (accounts) => {
-  const URI_BASE = 'https://opensea-creatures-api.herokuapp.com';
+  const URI_BASE = 'https://creatures-api.opensea.io';
   const CONTRACT_URI = `${URI_BASE}/contract/opensea-erc1155`;
   let myCollectible;
 
