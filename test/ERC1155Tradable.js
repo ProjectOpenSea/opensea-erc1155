@@ -2,6 +2,7 @@
 
 const truffleAssert = require('truffle-assertions');
 
+
 const vals = require('../lib/testValuesCommon.js');
 
 
@@ -194,6 +195,7 @@ contract("ERC1155Tradable - ERC 1155", (accounts) => {
          // Use the hand-crafted accessor
          const supplyAccessorValue = await instance.totalSupply(tokenId);
          assert.ok(supplyAccessorValue.eq(MINT_AMOUNT));
+
          // Make explicitly sure everything mateches
          assert.ok(supplyGetterValue.eq(balance));
          assert.ok(supplyAccessorValue.eq(balance));

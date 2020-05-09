@@ -6,3 +6,4 @@ node_modules/
 *-error.log
 .idea/
 yarn.lock
+package-lock.json

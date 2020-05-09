@@ -187,7 +187,7 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
     uint256 _optionId,
     address _toAddress,
     uint256 _amount
-  ) external {
+  ) external onlyOwner {
     _mint(Option(_optionId), _toAddress, _amount, "");
   }
 
