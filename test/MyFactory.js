@@ -2,6 +2,7 @@
 
 const truffleAssert = require('truffle-assertions');
 
+const vals = require('../lib/testValuesCommon.js');
 
 /* Contracts in this test */
 
@@ -35,10 +36,6 @@ const toBN = web3.utils.toBN;
 */
 
 contract("MyFactory", (accounts) => {
-  const URI_BASE = 'https://opensea-creatures-api.herokuapp.com/api/';
-  const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
-  const MAX_UINT256 = '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF';
-  const MAX_UINT256_BN = toBN(MAX_UINT256);
   // As set in (or inferred from) the contract
   const BASIC = 0;
   const PREMIUM =1;
@@ -132,7 +129,7 @@ contract("MyFactory", (accounts) => {
       assert.isOk(balanceUserA.eq(quantity));
       // Check that balance is correct
       const balanceOf = await myFactory.balanceOf(owner, PREMIUM);
-      assert.isOk(balanceOf.eq(MAX_UINT256_BN.sub(quantity)));
+      assert.isOk(balanceOf.eq(vals.MAX_UINT256_BN.sub(quantity)));
       // Check that total supply is correct
       const totalSupply = await myCollectible.totalSupply(PREMIUM);
       assert.isOk(totalSupply.eq(quantity));
@@ -154,7 +151,7 @@ contract("MyFactory", (accounts) => {
       assert.isOk(balanceUserB.eq(quantity));
       // Check that balance is correct
       const balanceOf = await myFactory.balanceOf(owner, GOLD);
-      assert.isOk(balanceOf.eq(MAX_UINT256_BN.sub(total)));
+      assert.isOk(balanceOf.eq(vals.MAX_UINT256_BN.sub(total)));
       // Check that total supply is correct
       const totalSupply1 = await myCollectible.totalSupply(2);
       assert.isOk(totalSupply1.eq(total));
@@ -176,7 +173,7 @@ contract("MyFactory", (accounts) => {
       assert.isOk(balanceUserA.eq(total));
       // Check that balance is correct
       const balanceOf = await myFactory.balanceOf(owner, PREMIUM);
-      assert.isOk(balanceOf.eq(MAX_UINT256_BN.sub(total)));
+      assert.isOk(balanceOf.eq(vals.MAX_UINT256_BN.sub(total)));
       // Check that total supply is correct
       const totalSupply = await myCollectible.totalSupply(PREMIUM);
       assert.isOk(totalSupply.eq(total));
@@ -211,29 +208,29 @@ contract("MyFactory", (accounts) => {
 
   describe('#uri()', () => {
     it('should return the correct uri for an option', async () =>
-      assert.equal(await myFactory.uri(BASIC), `${URI_BASE}factory/0`)
+      assert.equal(await myFactory.uri(BASIC), `${vals.URI_BASE}factory/0`)
       );
 
     it('should format any number as an option uri', async () =>
        assert.equal(
-         await myFactory.uri(MAX_UINT256),
-         `${URI_BASE}factory/${toBN(MAX_UINT256).toString()}`
+         await myFactory.uri(vals.MAX_UINT256),
+         `${vals.URI_BASE}factory/${toBN(vals.MAX_UINT256).toString()}`
        ));
   });
 
   describe('#balanceOf()', () => {
     it('should return max supply for un-minted token', async () => {
       const balanceOwner = await myFactory.balanceOf(owner, BASIC);
-      assert.isOk(balanceOwner.eq(MAX_UINT256_BN));
+      assert.isOk(balanceOwner.eq(vals.MAX_UINT256_BN));
       const balanceProxy = await myFactory.balanceOf(
         proxyForOwner,
         NO_SUCH_OPTION
       );
-      assert.isOk(balanceProxy.eq(MAX_UINT256_BN));
+      assert.isOk(balanceProxy.eq(vals.MAX_UINT256_BN));
     });
 
     it('should return balance of minted token', async () => {
-      const balance = MAX_UINT256_BN.sub(toBN(1100));
+      const balance = vals.MAX_UINT256_BN.sub(toBN(1100));
       const balanceOwner = await myFactory.balanceOf(owner, PREMIUM);
       assert.isOk(balanceOwner.eq(balance));
       const balanceProxy = await myFactory.balanceOf(proxyForOwner, PREMIUM);
@@ -257,7 +254,7 @@ contract("MyFactory", (accounts) => {
       const amount = toBN(100);
       const userBBalance = await myCollectible.balanceOf(userB, PREMIUM);
       await myFactory.safeTransferFrom(
-        ADDRESS_ZERO,
+        vals.ADDRESS_ZERO,
         userB,
         PREMIUM,
         amount,
@@ -271,7 +268,7 @@ contract("MyFactory", (accounts) => {
       const amount = toBN(100);
       const userBBalance = await myCollectible.balanceOf(userB, PREMIUM);
       await myFactory.safeTransferFrom(
-        ADDRESS_ZERO,
+        vals.ADDRESS_ZERO,
         userB,
         PREMIUM,
         100,
@@ -286,7 +283,7 @@ contract("MyFactory", (accounts) => {
       const amount = toBN(100);
       await truffleAssert.fails(
         myFactory.safeTransferFrom(
-          ADDRESS_ZERO,
+          vals.ADDRESS_ZERO,
           userB,
           PREMIUM,
           amount,
