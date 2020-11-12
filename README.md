@@ -70,7 +70,7 @@ yarn
 ```
 export INFURA_KEY="<infura_key>"
 export MNEMONIC="<metmask_mnemonic>"
-yarn truffle migrate --network rinkeby
+truffle migrate --network rinkeby
 ```
 
 ### Deploying to the mainnet Ethereum network.
