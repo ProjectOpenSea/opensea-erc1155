@@ -219,9 +219,9 @@ contract MyLootBox is ILootBox, Ownable, Pausable, ReentrancyGuard, MyFactory {
         // Process guaranteed token ids
         for (uint256 classId = 0; classId < settings.guarantees.length; classId++) {
           if (classId > 0) {
-            uint256 quantityOfGaranteed = settings.guarantees[classId];
-            _sendTokenWithClass(Class(classId), _toAddress, quantityOfGaranteed);
-            quantitySent += quantityOfGaranteed;
+            uint256 quantityOfGuaranteed = settings.guarantees[classId];
+            _sendTokenWithClass(Class(classId), _toAddress, quantityOfGuaranteed);
+            quantitySent += quantityOfGuaranteed;
           }
         }
       }
