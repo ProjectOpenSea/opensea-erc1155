@@ -69,7 +69,7 @@ yarn
 
 ```
 export INFURA_KEY="<infura_key>"
-export MNEMONIC="<metmask_mnemonic>"
+export MNEMONIC="<metamask_mnemonic>"
 truffle migrate --network rinkeby
 ```
 
